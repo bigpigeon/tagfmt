@@ -1,0 +1,7 @@
+//gofmt -s
+package main
+
+type User struct {
+	Name     string `json:"name" xml:"name" gorm:"type:varchar(64);unique_index"`
+	Password string `json:"password" gorm:"type:varchar(128)" xml:"password"`
+}
