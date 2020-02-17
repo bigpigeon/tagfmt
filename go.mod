@@ -1,3 +1,3 @@
-module github.com/bigpigeon/gofmt
+module github.com/bigpigeon/tagfmt
 
 go 1.13
