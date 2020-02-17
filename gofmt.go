@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // This file was copied from the src/cmd/gofmt/gofmt.go
+// but processFile function is modified
 
 package main
 
@@ -10,7 +11,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -45,7 +45,6 @@ const (
 var (
 	fileSet    = token.NewFileSet() // per process FileSet
 	exitCode   = 0
-	rewrite    func(*ast.File) *ast.File
 	parserMode parser.Mode
 )
 

@@ -5,7 +5,7 @@
 /*
 Tagfmt formats  struct tag within Go programs.
 It uses blanks for alignment.
-Alignment assumes that an editor is using a fixed-width font.
+tag must be in key:"value" pair format
 
 Usage:
 	tagfmt [flags] [path ...]
