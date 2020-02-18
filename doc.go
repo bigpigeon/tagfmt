@@ -23,6 +23,8 @@ The flags are:
 		sort struct tag by key
 	-w
 		write result to (source) file instead of stdout
+	-f
+		fill key and empty value for field
 
 Debugging support:
 	-cpuprofile filename
