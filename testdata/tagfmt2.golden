@@ -2,8 +2,8 @@
 package main
 
 type Example struct {
-	Data      string `xml:"data"       yaml:"data"                 json:"data"`
-	OtherData string `xml:"other_data" json:"other_data:omitempty" yaml:"other_data"`
+	Data      string `xml:"data"       yaml:"data,omitempty" json:"data"`
+	OtherData string `xml:"other_data" json:"other_data"     yaml:"other_data"`
 
 	NewLineData      string `xml:"new_line_data"       yaml:"new_line_data"       json:"new_line_data"`
 	NewLineOtherData string `xml:"new_line_other_data" yaml:"new_line_other_data" json:"new_line_other_data"`

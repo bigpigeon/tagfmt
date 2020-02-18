@@ -28,15 +28,16 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 			var preFieldLine int
 			for i, field := range n.Fields.List {
 				line := s.fs.Position(field.Pos()).Line
-				if preFieldLine+1 < line {
+				// If there are blank lines or nil field tag in the structure, reset
+				if field.Tag == nil || preFieldLine+1 < line {
 					fieldsTagFormat(n.Fields.List[start:end], longestList)
 					start = i
-					end = i
+					end = i + 1
 					longestList = nil
 				}
 				preFieldLine = line
 				if field.Tag != nil {
-					end = i
+					end = i + 1
 					_, keyValues, err := ParseTag(field.Tag.Value)
 					if err != nil {
 						s.Err = err
@@ -48,8 +49,6 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 						}
 						longestList[i] = max(len(kv.KeyValue), longestList[i])
 					}
-				} else {
-
 				}
 			}
 			fieldsTagFormat(n.Fields.List[start:], longestList)
@@ -85,7 +84,7 @@ func max(a, b int) int {
 }
 
 func tagFmt(f *ast.File, fs *token.FileSet) error {
-	s := &tagFormatter{fs: fileSet}
+	s := &tagFormatter{fs: fs}
 	ast.Walk(s, f)
 	return s.Err
 }
