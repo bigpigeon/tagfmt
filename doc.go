@@ -42,7 +42,7 @@ Examples
 		Password string `json:"password" xml:"password" yaml:"password"`
 	}
 
-When invoke with -s gofmt will sort struct tags by key.
+When invoke with -s tagfmt will sort struct tags by key.
 
 	struct tag key example:
 	struct User struct {
@@ -51,6 +51,25 @@ When invoke with -s gofmt will sort struct tags by key.
 
 	struct User struct {
 		Name     string `json:"name" xml:"name" yaml:"name"`
+	}
+
+When invoke with -f tagfmt will fill missing key and empty value in group(group split by black line or field without tag)
+
+	struct tag fill example:
+	type User struct {
+		Name     string `json:"name"`
+		Password string `xml:"password"`
+		EmptyTag string
+		City     string `json:"group" xml:"group"`
+		State    string `gorm:"type:varchar(64)" xml:"state"`
+	}
+
+	type User struct {
+		Name     string `json:"name"    xml:""`
+		Password string `xml:"password" json:""`
+		EmptyTag string
+		City     string `json:"group"            xml:"group" gorm:""`
+		State    string `gorm:"type:varchar(64)" xml:"state" json:""`
 	}
 */
 package main
