@@ -32,6 +32,7 @@ var (
 	tagSort   = flag.Bool("s", false, "sort struct tag by key")
 	doDiff    = flag.Bool("d", false, "display diffs instead of rewriting files")
 	allErrors = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
+	fill      = flag.Bool("f", false, "fill key and empty value for field")
 
 	// debugging
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
@@ -96,6 +97,13 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 	file, err := parser.ParseFile(fileSet, filename, src, parserMode)
 	if err != nil {
 		return err
+	}
+
+	if *fill {
+		err := tagFill(file, fileSet)
+		if err != nil {
+			return err
+		}
 	}
 
 	if *tagSort {

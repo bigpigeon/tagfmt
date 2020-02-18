@@ -61,17 +61,19 @@ func gofmtFlags(filename string, maxLines int) string {
 func runTest(t *testing.T, in, out string) {
 	// process flags
 	stdin := false
+	*fill = false
+	*tagSort = false
 	for _, flag := range strings.Split(gofmtFlags(in, 20), " ") {
 		switch flag {
 		case "":
 			// no flags
-
 		case "-stdin":
 			// fake flag - pretend input is from stdin
 			stdin = true
 		case "-s":
 			*tagSort = true
-
+		case "-f":
+			*fill = true
 		default:
 			t.Errorf("unrecognized flag name: %s", flag)
 		}
