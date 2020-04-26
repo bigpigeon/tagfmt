@@ -22,7 +22,6 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.StructType:
 		if n.Fields != nil {
-			var longestList []int
 			var start int
 			var end int
 			var preFieldLine int
@@ -30,34 +29,46 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 				line := s.fs.Position(field.Pos()).Line
 				// If there are blank lines or nil field tag in the structure, reset
 				if field.Tag == nil || preFieldLine+1 < line {
-					fieldsTagFormat(n.Fields.List[start:end], longestList)
-					start = i
-					end = i + 1
-					longestList = nil
-				}
-				preFieldLine = line
-				if field.Tag != nil {
-					end = i + 1
-					_, keyValues, err := ParseTag(field.Tag.Value)
+					err := fieldsTagFormat(n.Fields.List[start:end])
 					if err != nil {
 						s.Err = err
 						return nil
 					}
-					for i, kv := range keyValues {
-						if len(longestList) <= i {
-							longestList = append(longestList, 0)
-						}
-						longestList[i] = max(len(kv.KeyValue), longestList[i])
+					start = i
+					if field.Tag == nil {
+						start++
 					}
+					end = i + 1
 				}
+				preFieldLine = line
+				end = i + 1
+
 			}
-			fieldsTagFormat(n.Fields.List[start:], longestList)
+			err := fieldsTagFormat(n.Fields.List[start:])
+			if err != nil {
+				s.Err = err
+				return nil
+			}
 		}
 	}
 	return s
 }
 
-func fieldsTagFormat(fields []*ast.Field, longestList []int) {
+func fieldsTagFormat(fields []*ast.Field) error {
+	var longestList []int
+	for _, f := range fields {
+		_, keyValues, err := ParseTag(f.Tag.Value)
+		if err != nil {
+			return err
+		}
+		for i, kv := range keyValues {
+			if i >= len(longestList) {
+				longestList = append(longestList, 0)
+			}
+			longestList[i] = max(len(kv.KeyValue), longestList[i])
+		}
+	}
+
 	for _, f := range fields {
 		if f.Tag != nil {
 			quote, keyValues, err := ParseTag(f.Tag.Value)
@@ -74,6 +85,7 @@ func fieldsTagFormat(fields []*ast.Field, longestList []int) {
 			f.Tag.ValuePos = 0
 		}
 	}
+	return nil
 }
 
 func max(a, b int) int {
