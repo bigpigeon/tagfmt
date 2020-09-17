@@ -1,0 +1,28 @@
+//gofmt
+package main
+
+type PayRequest struct {
+	Order struct {
+		ID  string  `json:"id" yaml:"id"`
+		Tag string  `json:"tag" yaml:"tag"`
+		Fee float32 `json:"fee" yaml:"fee"`
+	} `json:"order" yaml:"order"`
+	Callback struct {
+		Url    string   `json:"url" yaml:"url"`
+		Params []string `json:"params" yaml:"params"`
+	} `json:"callback" yaml:"callback"`
+}
+
+type PayResponse struct {
+	Order struct {
+		ID  string  `json:"id" yaml:"id"`
+		Tag string  `json:"tag" yaml:"tag"`
+		Fee float32 `json:"fee" yaml:"fee"`
+	} `json:"order" yaml:"order"`
+
+	Callback struct {
+		Url    string   `json:"url" yaml:"url"`
+		Params []string `json:"params" yaml:"params"`
+	} `json:"callback" yaml:"callback"`
+	OrderStatus string `json:"status" yaml:"status"`
+}

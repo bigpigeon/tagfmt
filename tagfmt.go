@@ -8,6 +8,7 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"strings"
@@ -18,37 +19,72 @@ type tagFormatter struct {
 	fs  *token.FileSet
 }
 
+func (s *tagFormatter) resetFields(fields *[]*ast.Field) (hasError bool) {
+	err := fieldsTagFormat(*fields)
+	if err != nil {
+		s.Err = err
+		return true
+	}
+	*fields = nil
+	return false
+}
+
 func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.StructType:
 		if n.Fields != nil {
-			var start int
-			var end int
-			var preFieldLine int
-			for i, field := range n.Fields.List {
+
+			var multilineFields []*ast.Field
+			var oneLineFields []*ast.Field
+
+			for _, field := range n.Fields.List {
+				fmt.Printf("name %s start %s \nend %s\n", field.Names[0].Name, s.fs.Position(field.Pos()), s.fs.Position(field.End()))
 				line := s.fs.Position(field.Pos()).Line
-				// If there are blank lines or nil field tag in the structure, reset
-				if field.Tag == nil || preFieldLine+1 < line {
-					err := fieldsTagFormat(n.Fields.List[start:end])
-					if err != nil {
-						s.Err = err
+				eline := s.fs.Position(field.End()).Line
+				if eline-line > 0 {
+					preELine := line
+					if len(multilineFields) > 0 {
+						preELine = s.fs.Position(multilineFields[len(multilineFields)-1].End()).Line
+					}
+					if s.resetFields(&oneLineFields) {
 						return nil
 					}
-					start = i
-					if field.Tag == nil {
-						start++
+					if field.Tag == nil || line-preELine > 1 {
+						if s.resetFields(&multilineFields) {
+							return nil
+						}
 					}
-					end = i + 1
+					if field.Tag != nil {
+						multilineFields = append(multilineFields, field)
+					}
+				} else {
+					preLine := line
+					if len(oneLineFields) > 0 {
+						preLine = s.fs.Position(oneLineFields[len(oneLineFields)-1].Pos()).Line
+					}
+
+					if s.resetFields(&multilineFields) {
+						return nil
+					}
+
+					if field.Tag == nil || line-preLine > 1 {
+						if s.resetFields(&oneLineFields) {
+							return nil
+						}
+					}
+					if field.Tag != nil {
+						oneLineFields = append(oneLineFields, field)
+					}
 				}
-				preFieldLine = line
-				end = i + 1
 
 			}
-			err := fieldsTagFormat(n.Fields.List[start:])
-			if err != nil {
-				s.Err = err
+			if s.resetFields(&oneLineFields) {
 				return nil
 			}
+			if s.resetFields(&multilineFields) {
+				return nil
+			}
+
 		}
 	}
 	return s
