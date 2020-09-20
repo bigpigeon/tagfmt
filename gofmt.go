@@ -99,22 +99,26 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 		return err
 	}
 
+	var executor []Executor
+
 	if *fill {
-		err := tagFill(file, fileSet)
-		if err != nil {
-			return err
-		}
+		executor = append(executor, newTagFill(file, fileSet))
 	}
 
 	if *tagSort {
-		err := tagSortByKey(file)
+		executor = append(executor, newTagSort(file))
+	}
+	{
+		executor = append(executor, newTagFmt(file, fileSet))
+	}
+	for _, scan := range executor {
+		err := scan.Scan()
 		if err != nil {
 			return err
 		}
 	}
-
-	{
-		err := tagFmt(file, fileSet)
+	for _, exe := range executor {
+		err := exe.Execute()
 		if err != nil {
 			return err
 		}
@@ -336,4 +340,11 @@ func backupFile(filename string, data []byte, perm os.FileMode) (string, error) 
 	}
 
 	return bakname, err
+}
+
+// change field's tag will cause the token.Pos wrong
+// so I make all token.Pos step in Scan and field's tag change in Execute
+type Executor interface {
+	Scan() error
+	Execute() error
 }

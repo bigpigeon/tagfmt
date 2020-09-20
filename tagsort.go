@@ -17,33 +17,34 @@ import (
 var ErrInvalidTag = errors.New("Invalid tag ")
 
 type tagSorter struct {
-	Err error
+	f      *ast.File
+	Err    error
+	fields []*ast.Field
+}
+
+func (s *tagSorter) Scan() error {
+	ast.Walk(s, s.f)
+	return s.Err
+}
+
+func (s *tagSorter) Execute() error {
+	for _, field := range s.fields {
+		err := sortField(field)
+		if err != nil {
+			s.Err = err
+			return err
+		}
+	}
+	return s.Err
 }
 
 func (s *tagSorter) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.StructType:
 		if n.Fields != nil {
-
 			for _, field := range n.Fields.List {
 				if field.Tag != nil {
-
-					quote, keyValues, err := ParseTag(field.Tag.Value)
-					if err != nil {
-						s.Err = err
-						return nil
-					}
-					sort.Slice(keyValues, func(i, j int) bool {
-						return keyValues[i].Key < keyValues[j].Key
-					})
-					var keyValuesRaw []string
-					for _, kv := range keyValues {
-						keyValuesRaw = append(keyValuesRaw, kv.KeyValue)
-					}
-
-					field.Tag.Value = quote + strings.Join(keyValuesRaw, " ") + quote
-					field.Tag.ValuePos = 0
-
+					s.fields = append(s.fields, field)
 				}
 			}
 		}
@@ -51,15 +52,27 @@ func (s *tagSorter) Visit(node ast.Node) ast.Visitor {
 	return s
 }
 
-func tagSortByKey(f *ast.File) error {
-	s := &tagSorter{}
-	ast.Walk(s, f)
-	return s.Err
-}
-
 type KeyValue struct {
 	Key      string
 	KeyValue string
+}
+
+func sortField(field *ast.Field) error {
+	quote, keyValues, err := ParseTag(field.Tag.Value)
+	if err != nil {
+		return err
+	}
+	sort.Slice(keyValues, func(i, j int) bool {
+		return keyValues[i].Key < keyValues[j].Key
+	})
+	var keyValuesRaw []string
+	for _, kv := range keyValues {
+		keyValuesRaw = append(keyValuesRaw, kv.KeyValue)
+	}
+
+	field.Tag.Value = quote + strings.Join(keyValuesRaw, " ") + quote
+	field.Tag.ValuePos = 0
+	return nil
 }
 
 // ParseTag returns all tag keys and tags key:"Value" list
@@ -115,4 +128,10 @@ func ParseTag(tag string) (quote string, keyValues []KeyValue, err error) {
 		tag = tag[i+1:]
 	}
 	return
+}
+
+func newTagSort(f *ast.File) *tagSorter {
+	s := &tagSorter{f: f}
+
+	return s
 }

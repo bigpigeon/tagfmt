@@ -14,9 +14,28 @@ import (
 	"strings"
 )
 
+type tagFillerFields struct {
+	fields []*ast.Field
+	keySet map[string]struct{}
+}
+
 type tagFiller struct {
-	Err error
-	fs  *token.FileSet
+	Err          error
+	f            *ast.File
+	fs           *token.FileSet
+	needFillList []tagFillerFields
+}
+
+func (s *tagFiller) Scan() error {
+	ast.Walk(s, s.f)
+	return s.Err
+}
+
+func (s *tagFiller) Execute() error {
+	for _, needFill := range s.needFillList {
+		fieldsTagFill(needFill.fields, needFill.keySet)
+	}
+	return nil
 }
 
 func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
@@ -31,7 +50,7 @@ func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
 				line := s.fs.Position(field.Pos()).Line
 				// If there are blank lines or nil field tag in the structure, reset
 				if field.Tag == nil || preFieldLine+1 < line {
-					fieldsTagFill(n.Fields.List[start:end], keySet)
+					s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:end], keySet})
 					start = i
 					end = i + 1
 					keySet = map[string]struct{}{}
@@ -48,8 +67,9 @@ func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
 						keySet[kv.Key] = struct{}{}
 					}
 				}
+				s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:], keySet})
+
 			}
-			fieldsTagFill(n.Fields.List[start:], keySet)
 		}
 	}
 	return s
@@ -94,8 +114,7 @@ func keySetClone(keySet map[string]struct{}) map[string]struct{} {
 	return cl
 }
 
-func tagFill(f *ast.File, fs *token.FileSet) error {
-	s := &tagFiller{fs: fs}
-	ast.Walk(s, f)
-	return s.Err
+func newTagFill(f *ast.File, fs *token.FileSet) *tagFiller {
+	s := &tagFiller{fs: fs, f: f}
+	return s
 }

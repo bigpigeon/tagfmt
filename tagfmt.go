@@ -15,18 +15,31 @@ import (
 )
 
 type tagFormatter struct {
-	Err error
-	fs  *token.FileSet
+	Err        error
+	f          *ast.File
+	fs         *token.FileSet
+	needFormat [][]*ast.Field
 }
 
-func (s *tagFormatter) resetFields(fields *[]*ast.Field) (hasError bool) {
-	err := fieldsTagFormat(*fields)
-	if err != nil {
-		s.Err = err
-		return true
+func (s *tagFormatter) Scan() error {
+	ast.Walk(s, s.f)
+	return s.Err
+}
+
+func (s *tagFormatter) Execute() error {
+	for _, fields := range s.needFormat {
+		err := fieldsTagFormat(fields)
+		if err != nil {
+			s.Err = err
+			return err
+		}
 	}
+	return s.Err
+}
+
+func (s *tagFormatter) recordFields(fields *[]*ast.Field) {
+	s.needFormat = append(s.needFormat, (*fields)[:])
 	*fields = nil
-	return false
 }
 
 func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
@@ -38,6 +51,7 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 			var oneLineFields []*ast.Field
 
 			for _, field := range n.Fields.List {
+
 				fmt.Printf("name %s start %s \nend %s\n", field.Names[0].Name, s.fs.Position(field.Pos()), s.fs.Position(field.End()))
 				line := s.fs.Position(field.Pos()).Line
 				eline := s.fs.Position(field.End()).Line
@@ -46,13 +60,10 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 					if len(multilineFields) > 0 {
 						preELine = s.fs.Position(multilineFields[len(multilineFields)-1].End()).Line
 					}
-					if s.resetFields(&oneLineFields) {
-						return nil
-					}
+					s.recordFields(&oneLineFields)
 					if field.Tag == nil || line-preELine > 1 {
-						if s.resetFields(&multilineFields) {
-							return nil
-						}
+						s.recordFields(&multilineFields)
+
 					}
 					if field.Tag != nil {
 						multilineFields = append(multilineFields, field)
@@ -63,14 +74,10 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 						preLine = s.fs.Position(oneLineFields[len(oneLineFields)-1].Pos()).Line
 					}
 
-					if s.resetFields(&multilineFields) {
-						return nil
-					}
+					s.recordFields(&multilineFields)
 
 					if field.Tag == nil || line-preLine > 1 {
-						if s.resetFields(&oneLineFields) {
-							return nil
-						}
+						s.recordFields(&oneLineFields)
 					}
 					if field.Tag != nil {
 						oneLineFields = append(oneLineFields, field)
@@ -78,12 +85,8 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 				}
 
 			}
-			if s.resetFields(&oneLineFields) {
-				return nil
-			}
-			if s.resetFields(&multilineFields) {
-				return nil
-			}
+			s.recordFields(&oneLineFields)
+			s.recordFields(&multilineFields)
 
 		}
 	}
@@ -131,8 +134,7 @@ func max(a, b int) int {
 	return b
 }
 
-func tagFmt(f *ast.File, fs *token.FileSet) error {
-	s := &tagFormatter{fs: fs}
-	ast.Walk(s, f)
-	return s.Err
+func newTagFmt(f *ast.File, fs *token.FileSet) *tagFormatter {
+	s := &tagFormatter{fs: fs, f: f}
+	return s
 }
