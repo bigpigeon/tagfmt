@@ -1,4 +1,4 @@
-//gofmt -f
+//gofmt -f "*"
 package main
 
 type User struct {

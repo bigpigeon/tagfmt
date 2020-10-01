@@ -52,11 +52,6 @@ func (s *tagSorter) Visit(node ast.Node) ast.Visitor {
 	return s
 }
 
-type KeyValue struct {
-	Key      string
-	KeyValue string
-}
-
 func sortField(field *ast.Field) error {
 	quote, keyValues, err := ParseTag(field.Tag.Value)
 	if err != nil {
@@ -67,67 +62,12 @@ func sortField(field *ast.Field) error {
 	})
 	var keyValuesRaw []string
 	for _, kv := range keyValues {
-		keyValuesRaw = append(keyValuesRaw, kv.KeyValue)
+		keyValuesRaw = append(keyValuesRaw, kv.String())
 	}
 
 	field.Tag.Value = quote + strings.Join(keyValuesRaw, " ") + quote
 	field.Tag.ValuePos = 0
 	return nil
-}
-
-// ParseTag returns all tag keys and tags key:"Value" list
-func ParseTag(tag string) (quote string, keyValues []KeyValue, err error) {
-	if len(tag) < 2 {
-		err = ErrInvalidTag
-		return
-	}
-	quote = tag[:1]
-	tag = tag[1 : len(tag)-1]
-
-	for tag != "" {
-		// Skip leading space.
-		i := 0
-		for i < len(tag) && tag[i] == ' ' {
-			i++
-		}
-		tag = tag[i:]
-		if tag == "" {
-			break
-		}
-
-		// Scan to colon. A space, a quote or a control character is a syntax error.
-		// Strictly speaking, control chars include the range [0x7f, 0x9f], not just
-		// [0x00, 0x1f], but in practice, we ignore the multi-byte control characters
-		// as it is simpler to inspect the tag's bytes than the tag's runes.
-		i = 0
-		for i < len(tag) && tag[i] > ' ' && tag[i] != ':' && tag[i] != '"' && tag[i] != 0x7f {
-			i++
-		}
-		if i == 0 || i+1 >= len(tag) || tag[i] != ':' || tag[i+1] != '"' {
-			break
-		}
-		name := string(tag[:i])
-
-		// Scan quoted string to find value.
-		i = i + 2
-		for i < len(tag) && tag[i] != '"' {
-			if tag[i] == '\\' {
-				i++
-			}
-			i++
-		}
-		if i >= len(tag) {
-			return "", nil, ErrInvalidTag
-		}
-		keyValue := string(tag[:i+1])
-		keyValues = append(keyValues, KeyValue{
-			Key:      name,
-			KeyValue: keyValue,
-		})
-
-		tag = tag[i+1:]
-	}
-	return
 }
 
 func newTagSort(f *ast.File) *tagSorter {

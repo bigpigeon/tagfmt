@@ -32,8 +32,8 @@ var (
 	tagSort   = flag.Bool("s", false, "sort struct tag by key")
 	doDiff    = flag.Bool("d", false, "display diffs instead of rewriting files")
 	allErrors = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
-	fill      = flag.Bool("f", false, "fill key and empty value for field")
-
+	fill      = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=hungary(_val)")
+	selector  = flag.String("sel", "*", "field select regular express")
 	// debugging
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
 )
@@ -101,8 +101,12 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 
 	var executor []Executor
 
-	if *fill {
-		executor = append(executor, newTagFill(file, fileSet))
+	if *fill != "" {
+		filler, err := newTagFill(file, fileSet, *fill)
+		if err != nil {
+			return err
+		}
+		executor = append(executor, filler)
 	}
 
 	if *tagSort {

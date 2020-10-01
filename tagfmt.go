@@ -104,7 +104,7 @@ func fieldsTagFormat(fields []*ast.Field) error {
 			if i >= len(longestList) {
 				longestList = append(longestList, 0)
 			}
-			longestList[i] = max(len(kv.KeyValue), longestList[i])
+			longestList[i] = max(len(kv.String()), longestList[i])
 		}
 	}
 
@@ -117,7 +117,7 @@ func fieldsTagFormat(fields []*ast.Field) error {
 			}
 			var keyValueRaw []string
 			for i, kv := range keyValues {
-				keyValueRaw = append(keyValueRaw, kv.KeyValue+strings.Repeat(" ", longestList[i]-len(kv.KeyValue)))
+				keyValueRaw = append(keyValueRaw, kv.String()+strings.Repeat(" ", longestList[i]-len(kv.String())))
 			}
 
 			f.Tag.Value = quote + strings.TrimRight(strings.Join(keyValueRaw, " "), " ") + quote

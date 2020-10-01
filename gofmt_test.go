@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"text/scanner"
@@ -61,9 +62,16 @@ func gofmtFlags(filename string, maxLines int) string {
 func runTest(t *testing.T, in, out string) {
 	// process flags
 	stdin := false
-	*fill = false
+	*fill = ""
 	*tagSort = false
+	var nextVal func(s string)
 	for _, flag := range strings.Split(gofmtFlags(in, 20), " ") {
+		if nextVal != nil {
+			nextVal(flag)
+			nextVal = nil
+			continue
+		}
+
 		switch flag {
 		case "":
 			// no flags
@@ -73,7 +81,13 @@ func runTest(t *testing.T, in, out string) {
 		case "-s":
 			*tagSort = true
 		case "-f":
-			*fill = true
+			nextVal = func(s string) {
+				var err error
+				*fill, err = strconv.Unquote(s)
+				if err != nil {
+					panic(err)
+				}
+			}
 		default:
 			t.Errorf("unrecognized flag name: %s", flag)
 		}
