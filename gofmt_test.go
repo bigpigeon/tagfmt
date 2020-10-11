@@ -88,6 +88,22 @@ func runTest(t *testing.T, in, out string) {
 					panic(err)
 				}
 			}
+		case "-m":
+			nextVal = func(s string) {
+				var err error
+				*pattern, err = strconv.Unquote(s)
+				if err != nil {
+					panic(err)
+				}
+			}
+		case "-M":
+			nextVal = func(s string) {
+				var err error
+				*inversePattern, err = strconv.Unquote(s)
+				if err != nil {
+					panic(err)
+				}
+			}
 		default:
 			t.Errorf("unrecognized flag name: %s", flag)
 		}

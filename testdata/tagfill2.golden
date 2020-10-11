@@ -1,0 +1,9 @@
+//gofmt -f "json=:field"
+
+package main
+
+type Order struct {
+	ID  string  `json:"ID"`
+	Tag string  `json:"Tag"`
+	Fee float32 `json:"Fee"`
+}

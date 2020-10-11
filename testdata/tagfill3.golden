@@ -1,0 +1,11 @@
+//gofmt -f "json=hungary(:field)"
+
+package main
+
+type OrderDetail struct {
+	ID       string   `json:"id"`
+	UserName string   `json:"user_name"`
+	OrderID  string   `json:"order_id"`
+	Callback string   `json:"callback"`
+	Address  []string `json:"address"`
+}

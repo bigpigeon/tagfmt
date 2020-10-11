@@ -1,0 +1,11 @@
+//gofmt -f "json=big_camel(:field)"
+
+package main
+
+type OrderDetail struct {
+	ID        string   `json:"ID"`
+	User_Name string   `json:"UserName"`
+	OrderID   string   `json:"OrderID"`
+	Callback  string   `json:"Callback"`
+	Address   []string `json:"Address"`
+}

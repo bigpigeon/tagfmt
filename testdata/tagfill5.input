@@ -1,0 +1,11 @@
+//gofmt -f "json=lit_camel(:field)"
+
+package main
+
+type OrderDetail struct {
+    ID        string   ``
+    User_Name string   ``
+    OrderID   string   ``
+    Callback  string   ``
+    Address   []string ``
+}

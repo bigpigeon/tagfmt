@@ -47,9 +47,10 @@ func TestParseFieldRule(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, rules["json"]("UserDetail", "customUserDetail"), "customUserDetail")
 	}
+
 	{
-		rules, err := parseFieldRule("json=attach_tag_extra(hungary(:field))")
+		rules, err := parseFieldRule("json=hungary(:field)+s+:tag_extra")
 		require.NoError(t, err)
-		assert.Equal(t, rules["json"]("UserDetail", ",omitempty"), "user_detail,omitempty")
+		assert.Equal(t, rules["json"]("UserDetail", ",omitempty"), "user_details,omitempty")
 	}
 }

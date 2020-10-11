@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"runtime/pprof"
 	"strings"
@@ -27,16 +28,20 @@ import (
 
 var (
 	// main operation modes
-	list      = flag.Bool("l", false, "list files whose formatting differs from tagfmt's")
-	write     = flag.Bool("w", false, "write result to (source) file instead of stdout")
-	tagSort   = flag.Bool("s", false, "sort struct tag by key")
-	doDiff    = flag.Bool("d", false, "display diffs instead of rewriting files")
-	allErrors = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
-	fill      = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=hungary(_val)")
-	selector  = flag.String("sel", "*", "field select regular express")
+	list           = flag.Bool("l", false, "list files whose formatting differs from tagfmt's")
+	align          = flag.Bool("a", true, "align with nearby field's tag")
+	write          = flag.Bool("w", false, "write result to (source) file instead of stdout")
+	tagSort        = flag.Bool("s", false, "sort struct tag by key")
+	doDiff         = flag.Bool("d", false, "display diffs instead of rewriting files")
+	allErrors      = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
+	fill           = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=hungary(_val)")
+	pattern        = flag.String("p", ".*", "field name with regular expression pattern")
+	inversePattern = flag.String("P", "", "field name with inverse regular expression pattern")
 	// debugging
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
 )
+
+var selRule *regexp.Regexp
 
 const (
 	tabWidth    = 8
@@ -88,6 +93,17 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 		in = f
 		perm = fi.Mode().Perm()
 	}
+	if *inversePattern != "" {
+		err := selectInit(*inversePattern, true)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := selectInit(*pattern, false)
+		if err != nil {
+			return err
+		}
+	}
 
 	src, err := ioutil.ReadAll(in)
 	if err != nil {
@@ -112,7 +128,7 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 	if *tagSort {
 		executor = append(executor, newTagSort(file))
 	}
-	{
+	if *align {
 		executor = append(executor, newTagFmt(file, fileSet))
 	}
 	for _, scan := range executor {
@@ -351,4 +367,24 @@ func backupFile(filename string, data []byte, perm os.FileMode) (string, error) 
 type Executor interface {
 	Scan() error
 	Execute() error
+}
+
+var fieldFilter func(s string) bool
+
+func selectInit(s string, inverse bool) error {
+	var err error
+	selRule, err = regexp.Compile(s)
+	if err != nil {
+		return err
+	}
+	if inverse {
+		fieldFilter = func(s string) bool {
+			return !selRule.MatchString(s)
+		}
+	} else {
+		fieldFilter = func(s string) bool {
+			return selRule.MatchString(s)
+		}
+	}
+	return nil
 }

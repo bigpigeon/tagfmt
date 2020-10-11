@@ -62,6 +62,9 @@ func sortField(field *ast.Field) error {
 	})
 	var keyValuesRaw []string
 	for _, kv := range keyValues {
+		if fieldFilter(field.Names[0].Name) == false {
+			continue
+		}
 		keyValuesRaw = append(keyValuesRaw, kv.String())
 	}
 

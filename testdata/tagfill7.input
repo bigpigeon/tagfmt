@@ -1,0 +1,11 @@
+//gofmt -f "json=if_not_present(hungary(:field))"
+
+package main
+
+type OrderDetail struct {
+	ID       string   ``
+	UserName string   `json:"name"`
+	OrderID  string   `json:"order"`
+	Callback string   ``
+	Address  []string ``
+}

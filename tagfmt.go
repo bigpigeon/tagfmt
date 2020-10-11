@@ -8,7 +8,6 @@
 package main
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"strings"
@@ -49,41 +48,37 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 
 			var multilineFields []*ast.Field
 			var oneLineFields []*ast.Field
-
+			if len(n.Fields.List) == 0 {
+				return s
+			}
+			preMultiELine := -1
+			preEline := -1
 			for _, field := range n.Fields.List {
-
-				fmt.Printf("name %s start %s \nend %s\n", field.Names[0].Name, s.fs.Position(field.Pos()), s.fs.Position(field.End()))
+				if fieldFilter(field.Names[0].Name) == false {
+					continue
+				}
 				line := s.fs.Position(field.Pos()).Line
 				eline := s.fs.Position(field.End()).Line
+				// the one way to distinguish the field with multiline anonymous struct and others
 				if eline-line > 0 {
-					preELine := line
-					if len(multilineFields) > 0 {
-						preELine = s.fs.Position(multilineFields[len(multilineFields)-1].End()).Line
-					}
 					s.recordFields(&oneLineFields)
-					if field.Tag == nil || line-preELine > 1 {
+					if field.Tag == nil || line-preMultiELine > 1 {
 						s.recordFields(&multilineFields)
-
 					}
 					if field.Tag != nil {
 						multilineFields = append(multilineFields, field)
 					}
+					preMultiELine = eline
 				} else {
-					preLine := line
-					if len(oneLineFields) > 0 {
-						preLine = s.fs.Position(oneLineFields[len(oneLineFields)-1].Pos()).Line
-					}
-
 					s.recordFields(&multilineFields)
-
-					if field.Tag == nil || line-preLine > 1 {
+					if field.Tag == nil || line-preEline > 1 {
 						s.recordFields(&oneLineFields)
 					}
 					if field.Tag != nil {
 						oneLineFields = append(oneLineFields, field)
 					}
+					preEline = eline
 				}
-
 			}
 			s.recordFields(&oneLineFields)
 			s.recordFields(&multilineFields)
