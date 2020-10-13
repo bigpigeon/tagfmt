@@ -1,0 +1,9 @@
+//gofmt
+package main
+
+type PayRequest struct {
+	Order    `json:",inline" yaml:",inline"`
+	Callback `json:",inline" yaml:",inline"`
+	OrderStatus string `json:"status" yaml:"status"`
+	OrderRetry  int    `json:"retry" yaml:"retry"`
+}

@@ -41,6 +41,24 @@ func (s *tagFormatter) recordFields(fields *[]*ast.Field) {
 	*fields = nil
 }
 
+func getFieldName(node *ast.Field) string {
+	if len(node.Names) > 0 {
+		return node.Names[0].Name
+	}
+
+	return ""
+}
+
+func getFieldOrTypeName(node *ast.Field) string {
+	if len(node.Names) > 0 {
+		return node.Names[0].Name
+	}
+	if ident, ok := node.Type.(*ast.Ident); ok {
+		return ident.Name
+	}
+	return ""
+}
+
 func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.StructType:
@@ -48,20 +66,30 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 
 			var multilineFields []*ast.Field
 			var oneLineFields []*ast.Field
+			var anonymousFields []*ast.Field
 			if len(n.Fields.List) == 0 {
 				return s
 			}
 			preMultiELine := -1
 			preEline := -1
+			preAnonymousELine := -1
 			for _, field := range n.Fields.List {
-				if fieldFilter(field.Names[0].Name) == false {
-					continue
-				}
 				line := s.fs.Position(field.Pos()).Line
 				eline := s.fs.Position(field.End()).Line
-				// the one way to distinguish the field with multiline anonymous struct and others
-				if eline-line > 0 {
-					s.recordFields(&oneLineFields)
+				fieldName := getFieldOrTypeName(field)
+				if fieldFilter(fieldName) == false {
+					continue
+				}
+
+				if len(field.Names) == 0 {
+					if field.Tag == nil || line-preAnonymousELine > 1 {
+						s.recordFields(&multilineFields)
+					}
+					if field.Tag != nil {
+						anonymousFields = append(anonymousFields, field)
+					}
+					preAnonymousELine = eline
+				} else if eline-line > 0 { // the one way to distinguish the field with multiline anonymous struct and others
 					if field.Tag == nil || line-preMultiELine > 1 {
 						s.recordFields(&multilineFields)
 					}
@@ -70,7 +98,6 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 					}
 					preMultiELine = eline
 				} else {
-					s.recordFields(&multilineFields)
 					if field.Tag == nil || line-preEline > 1 {
 						s.recordFields(&oneLineFields)
 					}

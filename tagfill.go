@@ -59,7 +59,8 @@ func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
 			var end int
 			var preFieldLine int
 			for i, field := range n.Fields.List {
-				if fieldFilter(field.Names[0].Name) == false {
+				fieldName := getFieldOrTypeName(field)
+				if fieldFilter(fieldName) == false {
 					continue
 				}
 				line := s.fs.Position(field.Pos()).Line
@@ -91,7 +92,7 @@ func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
 
 func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[string]tagFieldRule) {
 	for _, f := range fields {
-
+		fieldName := getFieldName(f)
 		if f.Tag != nil {
 			rs := ruleSetClone(ruleSet)
 			fillMissing := ruleSet["*"]
@@ -121,7 +122,7 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 					appendKeyValues = append(appendKeyValues, KeyValue{
 						Key:   k,
 						quote: quote,
-						Value: fillMissing(f.Names[0].Name, ""),
+						Value: fillMissing(fieldName, ""),
 					})
 				}
 
@@ -131,7 +132,7 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 
 			for i, kv := range keyValues {
 				if rs[kv.Key] != nil {
-					keyValues[i].Value = rs[kv.Key](f.Names[0].Name, kv.Value)
+					keyValues[i].Value = rs[kv.Key](fieldName, kv.Value)
 				}
 			}
 			for _, kv := range keyValues {
@@ -141,7 +142,7 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 				appendKeyValues = append(appendKeyValues, KeyValue{
 					Key:   k,
 					quote: quote,
-					Value: rule(f.Names[0].Name, ""),
+					Value: rule(fieldName, ""),
 				})
 			}
 			var keyValueRaw []string
