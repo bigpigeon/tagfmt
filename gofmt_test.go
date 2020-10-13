@@ -46,7 +46,7 @@ func gofmtFlags(filename string, maxLines int) string {
 	for s.Line <= maxLines {
 		switch s.Scan() {
 		case scanner.Comment:
-			const prefix = "//gofmt "
+			const prefix = "//tagfmt "
 			if t := s.TokenText(); strings.HasPrefix(t, prefix) {
 				return strings.TrimSpace(t[len(prefix):])
 			}

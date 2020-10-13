@@ -1,4 +1,4 @@
-//gofmt -M "^Ignore.*$"
+//tagfmt -M "^Ignore.*$"
 package main
 
 type OrderDetail struct {

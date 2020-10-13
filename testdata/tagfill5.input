@@ -1,4 +1,4 @@
-//gofmt -f "json=lit_camel(:field)"
+//tagfmt -f "json=lit_camel(:field)"
 
 package main
 

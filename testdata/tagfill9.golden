@@ -1,4 +1,4 @@
-//gofmt -f "json=hungary(:tag_basic)+,omitempty"
+//tagfmt -f "json=hungary(:tag_basic)+,omitempty"
 
 package main
 

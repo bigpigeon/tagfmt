@@ -1,4 +1,4 @@
-//gofmt -f "json=hungary(:field)"
+//tagfmt -f "json=hungary(:field)"
 
 package main
 

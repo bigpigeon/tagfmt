@@ -1,4 +1,4 @@
-//gofmt
+//tagfmt
 package main
 
 type PayRequest struct {

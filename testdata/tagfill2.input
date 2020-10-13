@@ -1,4 +1,4 @@
-//gofmt -f "json=:field"
+//tagfmt -f "json=:field"
 
 package main
 

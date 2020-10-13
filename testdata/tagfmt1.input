@@ -1,4 +1,4 @@
-//gofmt
+//tagfmt
 package main
 type Example struct {
 	Data      string `xml:"data" yaml:"data"  json:"data"`

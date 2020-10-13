@@ -1,4 +1,4 @@
-//gofmt -s
+//tagfmt -s
 package main
 
 type User struct {
