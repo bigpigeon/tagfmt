@@ -15,12 +15,27 @@ import (
 	"strings"
 )
 
+var ErrUnclosedQuote = errors.New("unclosed quote")
+var ErrUnclosedBracket = errors.New("unclosed bracket")
+
 type tagFillerFields struct {
 	fields []*ast.Field
 	keySet map[string]struct{}
 }
 
-type tagFieldRule func(fieldName string, tagName string) (newTagName string)
+type ruleFuncArgs struct {
+	Field  *ast.Field
+	OldTag string // old tag value
+}
+
+func newRuleArgs(f *ast.Field, oldTag string) *ruleFuncArgs {
+	return &ruleFuncArgs{
+		Field:  f,
+		OldTag: oldTag,
+	}
+}
+
+type tagFieldRule func(field *ruleFuncArgs) (newTagName string)
 
 type tagFiller struct {
 	Err          error
@@ -92,7 +107,6 @@ func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
 
 func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[string]tagFieldRule) {
 	for _, f := range fields {
-		fieldName := getFieldName(f)
 		if f.Tag != nil {
 			rs := ruleSetClone(ruleSet)
 			fillMissing := ruleSet["*"]
@@ -122,7 +136,7 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 					appendKeyValues = append(appendKeyValues, KeyValue{
 						Key:   k,
 						quote: quote,
-						Value: fillMissing(fieldName, ""),
+						Value: fillMissing(newRuleArgs(f, "")),
 					})
 				}
 
@@ -132,7 +146,7 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 
 			for i, kv := range keyValues {
 				if rs[kv.Key] != nil {
-					keyValues[i].Value = rs[kv.Key](fieldName, kv.Value)
+					keyValues[i].Value = rs[kv.Key](newRuleArgs(f, kv.Value))
 				}
 			}
 			for _, kv := range keyValues {
@@ -142,7 +156,7 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 				appendKeyValues = append(appendKeyValues, KeyValue{
 					Key:   k,
 					quote: quote,
-					Value: rule(fieldName, ""),
+					Value: rule(newRuleArgs(f, "")),
 				})
 			}
 			var keyValueRaw []string
@@ -168,24 +182,34 @@ func keySetClone(keySet map[string]struct{}) map[string]struct{} {
 
 func findRightBracket(r string) int {
 	c := 0 // extra left bracket count
-	for e := 0; e < len(r); e++ {
-		if r[e] == '(' {
+	for i := 0; i < len(r); i++ {
+		switch _c := r[i]; _c {
+		case '(':
 			c++
-		} else if r[e] == ')' {
+		case ')':
 			if c == 0 {
-				return e
+				return i
 			}
 			c--
+		case '\'', '"':
+			i++
+			ni := findNextQuote(r, i, _c)
+			if ni == -1 {
+				return -1
+			}
+			i = ni
 		}
+
 	}
 	return -1
 }
 
-func parsePlusSign(r string) ([]string, error) {
+func splitPlusSign(r string) ([]string, error) {
+	r = strings.TrimSpace(r)
 	var rule []string
 	s, e := 0, 0
 	for ; e < len(r); e++ {
-		switch r[e] {
+		switch c := r[e]; c {
 		case '+':
 			rule = append(rule, r[s:e])
 			s = e + 1
@@ -193,9 +217,16 @@ func parsePlusSign(r string) ([]string, error) {
 			e++
 			i := findRightBracket(r[e:])
 			if i == -1 {
-				return nil, errors.New("invalid rule:" + r)
+				return nil, ErrUnclosedBracket
 			}
 			e += i
+		case '\'', '"':
+			e++
+			ni := findNextQuote(r, e, c)
+			if ni == -1 {
+				return nil, ErrUnclosedQuote
+			}
+			e = ni
 		}
 	}
 	if s != e {
@@ -210,100 +241,200 @@ func parseFieldRuleSingle(r string) (tagFieldRule, error) {
 		if bi == -1 {
 			return nil, errors.New("parse rule failure, invalid rule string")
 		}
-		subRule, err := parseFieldRulePlus(r[bi+1 : len(r)-1])
-		if err != nil {
-			return nil, err
-		}
+		argsStr := r[bi+1 : len(r)-1]
 		switch r[:bi] {
 		case "upper":
-			return func(fieldName string, tagName string) (newTagName string) {
-				return strings.ToUpper(subRule(fieldName, tagName))
+			subRuleList, err := parseFieldMultiRule(argsStr, 1)
+			if err != nil {
+				return nil, err
+			}
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return strings.ToUpper(subRuleList[0](args))
 			}, nil
 		case "lower":
-			return func(fieldName string, tagName string) (newTagName string) {
-				return strings.ToLower(subRule(fieldName, tagName))
+			subRuleList, err := parseFieldMultiRule(argsStr, 1)
+			if err != nil {
+				return nil, err
+			}
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return strings.ToLower(subRuleList[0](args))
 			}, nil
 		case "hungary":
-			return func(fieldName string, tagName string) (newTagName string) {
-				return hungaryConvert(subRule(fieldName, tagName))
+			subRuleList, err := parseFieldMultiRule(argsStr, 1)
+			if err != nil {
+				return nil, err
+			}
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return hungaryConvert(subRuleList[0](args))
 			}, nil
 		case "big_camel":
-			return func(fieldName string, tagName string) (newTagName string) {
-				return bigCamelConvert(subRule(fieldName, tagName))
+			subRuleList, err := parseFieldMultiRule(argsStr, 1)
+			if err != nil {
+				return nil, err
+			}
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return bigCamelConvert(subRuleList[0](args))
 			}, nil
 		case "lit_camel":
-			return func(fieldName string, tagName string) (newTagName string) {
-				return litCamelConvert(subRule(fieldName, tagName))
+			subRuleList, err := parseFieldMultiRule(argsStr, 1)
+			if err != nil {
+				return nil, err
+			}
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return litCamelConvert(subRuleList[0](args))
 			}, nil
-		case "if_not_present":
-			return func(fieldName string, tagName string) (newTagName string) {
-				if tagName != "" {
-					return tagName
+		case "or":
+			subRuleList, err := parseFieldMultiRule(argsStr, 2)
+			if err != nil {
+				return nil, err
+			}
+			return func(args *ruleFuncArgs) (newTagName string) {
+				val1 := subRuleList[0](args)
+				if val1 != "" {
+					return val1
 				}
-				return subRule(fieldName, tagName)
+				return subRuleList[1](args)
 			}, nil
 		default:
 			return nil, errors.New("invalid field rule " + r[:bi])
 		}
-	} else if r == ":field" { // fetch field name
-		return func(fieldName string, tagName string) (newTagName string) {
-			return fieldName
-		}, nil
-	} else if r == ":tag" { // fetch field name
-		return func(fieldName string, tagName string) (newTagName string) {
-			return tagName
-		}, nil
-	} else if r == ":tag_basic" { // fetch tag before ','
-		return func(fieldName string, tagName string) (newTagName string) {
-			if comma := strings.Index(tagName, ","); comma != -1 {
-				return tagName[:comma]
-			}
-			return tagName
-		}, nil
-	} else if r == ":tag_extra" { // fetch tag after ','
-		return func(fieldName string, tagName string) (newTagName string) {
-			if comma := strings.Index(tagName, ","); comma != -1 {
-				return tagName[comma:]
-			}
-			return ""
-		}, nil
 	} else {
-		return func(fieldName string, tagName string) (newTagName string) {
-			return r
-		}, nil
+		if len(r) > 0 && (r[0] == '\'' || r[0] == '"') {
+			r = strings.Trim(r, string(r[0]))
+		}
+		if r == ":field" { // fetch field name
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return getFieldName(args.Field)
+			}, nil
+		} else if r == ":tag" { // fetch field name
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return args.OldTag
+			}, nil
+		} else if r == ":tag_basic" { // fetch tag before ','
+			return func(args *ruleFuncArgs) (newTagName string) {
+				if comma := strings.Index(args.OldTag, ","); comma != -1 {
+					return args.OldTag[:comma]
+				}
+				return args.OldTag
+			}, nil
+		} else if r == ":tag_extra" { // fetch tag after ','
+			return func(args *ruleFuncArgs) (newTagName string) {
+				if comma := strings.Index(args.OldTag, ","); comma != -1 {
+					return args.OldTag[comma:]
+				}
+				return ""
+			}, nil
+		} else {
+			return func(args *ruleFuncArgs) (newTagName string) {
+				return r
+			}, nil
+		}
 	}
+}
+
+func findNextQuote(s string, i int, quote byte) int {
+	for j := i + 1; j < len(s); j++ {
+		switch o := s[j]; o {
+		case '\\':
+			j++
+		case quote:
+			return j
+		}
+	}
+	return -1
+}
+
+func splitWithoutQuote(s string, key byte) ([]string, error) {
+	var sub []string
+	pre := 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if s[i] == '"' || s[i] == '\'' {
+			nextQuote := findNextQuote(s, i, c)
+			if nextQuote == -1 {
+				return nil, ErrUnclosedQuote
+			}
+			i = nextQuote
+		} else if s[i] == key {
+			pre = i + 1
+			sub = append(sub, s[:i])
+		}
+	}
+	if pre != len(s) {
+		sub = append(sub, s[pre:])
+	}
+	return sub, nil
+}
+
+// parse multiple rule, split with ',',
+// r: is the rule string
+// argsNum: args number limit, return error if args not equal to the argsNum
+// e.g: parseFieldMultiRule(":tag, My+',omitempty'", 2) => will get two tagFieldRule
+func parseFieldMultiRule(r string, argsNum int) ([]tagFieldRule, error) {
+	r = strings.TrimSpace(r)
+	rSplitComma, err := splitWithoutQuote(r, ',')
+	if err != nil {
+		return nil, err
+	}
+	if len(rSplitComma) != argsNum {
+		return nil, errors.New("args number wrong")
+	}
+	var ruleList []tagFieldRule
+	for _, rule := range rSplitComma {
+		ruleStrList, err := splitPlusSign(rule)
+		if err != nil {
+			return nil, err
+		}
+		var subRules []tagFieldRule
+		for _, r := range ruleStrList {
+			single, err := parseFieldRuleSingle(r)
+			if err != nil {
+				return nil, err
+			}
+			subRules = append(subRules, single)
+		}
+		ruleList = append(ruleList, func(info *ruleFuncArgs) (newTagName string) {
+			s := ""
+			for _, rule := range subRules {
+				s += rule(info)
+			}
+			return s
+		})
+	}
+	return ruleList, nil
 }
 
 // parse with '+' rule
 func parseFieldRulePlus(r string) (tagFieldRule, error) {
-	r = strings.TrimSpace(r)
-	ruleStrList, err := parsePlusSign(r)
+	ruleStrList, err := splitPlusSign(r)
 	if err != nil {
 		return nil, err
 	}
-	var rules []tagFieldRule
+	var subRules []tagFieldRule
 	for _, r := range ruleStrList {
 		single, err := parseFieldRuleSingle(r)
 		if err != nil {
 			return nil, err
 		}
-		rules = append(rules, single)
+		subRules = append(subRules, single)
 	}
-	return func(fieldName string, tagName string) (newTagName string) {
+	return func(info *ruleFuncArgs) (newTagName string) {
 		s := ""
-		for _, rule := range rules {
-			s += rule(fieldName, tagName)
+		for _, rule := range subRules {
+			s += rule(info)
 		}
 		return s
 	}, nil
-
 }
 
 func parseFieldRule(s string) (map[string]tagFieldRule, error) {
 	rules := map[string]tagFieldRule{}
 	var err error
-	for _, cell := range strings.Split(s, "|") {
-
+	ruleList, err := splitWithoutQuote(s, '|')
+	if err != nil {
+		return nil, err
+	}
+	for _, cell := range ruleList {
 		keyVal := strings.SplitN(cell, "=", 2)
 		// if value is nil ,use key hold rule
 		if len(keyVal) == 1 {
@@ -311,7 +442,7 @@ func parseFieldRule(s string) (map[string]tagFieldRule, error) {
 			if err != nil { // error must be not nil
 				panic(err)
 			}
-			rules[keyVal[0]] = func(fieldName string, tagName string) (newTagName string) {
+			rules[keyVal[0]] = func(info *ruleFuncArgs) (newTagName string) {
 				return ""
 			}
 			continue

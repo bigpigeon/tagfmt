@@ -9,6 +9,7 @@ package main
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go/ast"
 	"testing"
 )
 
@@ -36,21 +37,47 @@ func TestHungaryConvert(t *testing.T) {
 }
 
 func TestParseFieldRule(t *testing.T) {
+	testFieldArgs := func(name string, oldTag string) *ruleFuncArgs {
+		return newRuleArgs(&ast.Field{
+			Names: []*ast.Ident{{Name: name}},
+		}, oldTag)
+	}
 	{
 		rules, err := parseFieldRule("json=hungary(:field)|yaml=lit_camel(:field)")
 		require.NoError(t, err)
-		assert.Equal(t, rules["json"]("UserDetail", ""), "user_detail")
-		assert.Equal(t, rules["yaml"]("UserDetail", ""), "userDetail")
+		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "")), "user_detail")
+		assert.Equal(t, rules["yaml"](testFieldArgs("UserDetail", "")), "userDetail")
 	}
 	{
-		rules, err := parseFieldRule("json=if_not_present(hungary(:field))")
+		rules, err := parseFieldRule("json=or(:tag, hungary(:field))")
 		require.NoError(t, err)
-		assert.Equal(t, rules["json"]("UserDetail", "customUserDetail"), "customUserDetail")
+		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "customUserDetail")), "customUserDetail")
 	}
 
 	{
 		rules, err := parseFieldRule("json=hungary(:field)+s+:tag_extra")
 		require.NoError(t, err)
-		assert.Equal(t, rules["json"]("UserDetail", ",omitempty"), "user_details,omitempty")
+		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", ",omitempty")), "user_details,omitempty")
+	}
+
+	{
+		rules, err := parseFieldRule("json=hungary(:field)+',omitempty'")
+		require.NoError(t, err)
+		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "")), "user_detail,omitempty")
+	}
+	{
+		rules, err := parseFieldRule("json=or(':tag',':field')")
+		require.NoError(t, err)
+		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "user_detail")), "user_detail")
+	}
+	{
+		rules, err := parseFieldRule("json=or(':field', ':tag')")
+		require.NoError(t, err)
+		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "user_detail")), "UserDetail")
+	}
+	{
+		rules, err := parseFieldRule("binding='a|b|c+d,e'")
+		require.NoError(t, err)
+		assert.Equal(t, rules["binding"](testFieldArgs("UserDetail", "")), "a|b|c+d,e")
 	}
 }

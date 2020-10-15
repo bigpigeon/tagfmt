@@ -1,4 +1,4 @@
-//tagfmt -f "json=if_not_present(hungary(:field))"
+//tagfmt -f "json=or(:tag,hungary(:field))"
 
 package main
 
