@@ -85,7 +85,7 @@ func runTest(t *testing.T, in, out string) {
 				var err error
 				*fill, err = strconv.Unquote(s)
 				if err != nil {
-					panic(err)
+					panic("err: " + err.Error() + " str: " + s)
 				}
 			}
 		case "-m":
