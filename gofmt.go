@@ -34,7 +34,7 @@ var (
 	tagSort        = flag.Bool("s", false, "sort struct tag by key")
 	doDiff         = flag.Bool("d", false, "display diffs instead of rewriting files")
 	allErrors      = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
-	fill           = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=hungary(_val)")
+	fill           = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=snake(_val)")
 	pattern        = flag.String("p", ".*", "field name with regular expression pattern")
 	inversePattern = flag.String("P", "", "field name with inverse regular expression pattern")
 	// debugging

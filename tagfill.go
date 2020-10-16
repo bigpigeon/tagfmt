@@ -259,29 +259,29 @@ func parseFieldRuleSingle(r string) (tagFieldRule, error) {
 			return func(args *ruleFuncArgs) (newTagName string) {
 				return strings.ToLower(subRuleList[0](args))
 			}, nil
-		case "hungary":
+		case "snake":
 			subRuleList, err := parseFieldMultiRule(argsStr, 1)
 			if err != nil {
 				return nil, err
 			}
 			return func(args *ruleFuncArgs) (newTagName string) {
-				return hungaryConvert(subRuleList[0](args))
+				return snakeConvert(subRuleList[0](args))
 			}, nil
-		case "big_camel":
+		case "upper_camel":
 			subRuleList, err := parseFieldMultiRule(argsStr, 1)
 			if err != nil {
 				return nil, err
 			}
 			return func(args *ruleFuncArgs) (newTagName string) {
-				return bigCamelConvert(subRuleList[0](args))
+				return upperCamelConvert(subRuleList[0](args))
 			}, nil
-		case "lit_camel":
+		case "lower_camel":
 			subRuleList, err := parseFieldMultiRule(argsStr, 1)
 			if err != nil {
 				return nil, err
 			}
 			return func(args *ruleFuncArgs) (newTagName string) {
-				return litCamelConvert(subRuleList[0](args))
+				return lowerCamelConvert(subRuleList[0](args))
 			}, nil
 		case "or":
 			subRuleList, err := parseFieldMultiRule(argsStr, 2)
@@ -469,7 +469,7 @@ func newTagFill(f *ast.File, fs *token.FileSet, rule string) (*tagFiller, error)
 	return s, nil
 }
 
-func hungaryConvert(name string) string {
+func snakeConvert(name string) string {
 	if len(name) == 0 {
 		panic("error length name string")
 	}
@@ -502,11 +502,11 @@ func hungaryConvert(name string) string {
 	return string(convert)
 }
 
-func bigCamelConvert(name string) string {
+func upperCamelConvert(name string) string {
 	if len(name) == 0 {
 		panic("error length name string")
 	}
-	toBigCamel := false
+	toUpperCamel := false
 	var newName []byte
 	if name[0] >= 'a' && name[0] <= 'z' {
 		newName = append(newName, name[0]-'a'+'A')
@@ -515,14 +515,14 @@ func bigCamelConvert(name string) string {
 
 	for _, c := range name {
 		if c == '_' {
-			toBigCamel = true
-		} else if toBigCamel {
+			toUpperCamel = true
+		} else if toUpperCamel {
 			if c >= 'a' && c <= 'z' {
 				newName = append(newName, byte(c)-'a'+'A')
 			} else {
 				newName = append(newName, []byte(string([]rune{c}))...)
 			}
-			toBigCamel = false
+			toUpperCamel = false
 		} else {
 			newName = append(newName, []byte(string([]rune{c}))...)
 		}
@@ -530,12 +530,12 @@ func bigCamelConvert(name string) string {
 	return string(newName)
 }
 
-func litCamelConvert(name string) string {
+func lowerCamelConvert(name string) string {
 	if len(name) == 0 {
 		panic("error length name string")
 	}
 
-	toBigCamel := false
+	toUpperCamel := false
 	var newName []byte
 	if name[0] >= 'A' && name[0] <= 'Z' {
 		newName = append(newName, name[0]-'A'+'a')
@@ -544,14 +544,14 @@ func litCamelConvert(name string) string {
 
 	for _, c := range name {
 		if c == '_' {
-			toBigCamel = true
-		} else if toBigCamel {
+			toUpperCamel = true
+		} else if toUpperCamel {
 			if c >= 'a' && c <= 'z' {
 				newName = append(newName, byte(c)-'a'+'A')
 			} else {
 				newName = append(newName, []byte(string([]rune{c}))...)
 			}
-			toBigCamel = false
+			toUpperCamel = false
 		} else {
 			newName = append(newName, []byte(string([]rune{c}))...)
 		}

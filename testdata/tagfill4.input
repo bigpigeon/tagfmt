@@ -1,4 +1,4 @@
-//tagfmt -f "json=big_camel(:field)"
+//tagfmt -f "json=upper_camel(:field)"
 
 package main
 

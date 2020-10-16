@@ -1,4 +1,4 @@
-//tagfmt -f "json=or(:tag,hungary(:field))"
+//tagfmt -f "json=or(:tag,snake(:field))"
 
 package main
 

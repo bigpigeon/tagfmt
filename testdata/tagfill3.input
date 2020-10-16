@@ -1,4 +1,4 @@
-//tagfmt -f "json=hungary(:field)"
+//tagfmt -f "json=snake(:field)"
 
 package main
 

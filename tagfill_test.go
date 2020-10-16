@@ -13,27 +13,27 @@ import (
 	"testing"
 )
 
-func TestBigCamelConvert(t *testing.T) {
-	assert.Equal(t, bigCamelConvert("id"), "Id")
-	assert.Equal(t, bigCamelConvert("bigPigeon"), "BigPigeon")
-	assert.Equal(t, bigCamelConvert("big_pigeon"), "BigPigeon")
+func TestUpperCamelConvert(t *testing.T) {
+	assert.Equal(t, upperCamelConvert("id"), "Id")
+	assert.Equal(t, upperCamelConvert("bigPigeon"), "BigPigeon")
+	assert.Equal(t, upperCamelConvert("big_pigeon"), "BigPigeon")
 }
 
-func TestLitCamelConvert(t *testing.T) {
-	assert.Equal(t, litCamelConvert("ID"), "iD")
-	assert.Equal(t, litCamelConvert("BigPigeon"), "bigPigeon")
-	assert.Equal(t, litCamelConvert("big_pigeon"), "bigPigeon")
+func TestLowerCamelConvert(t *testing.T) {
+	assert.Equal(t, lowerCamelConvert("ID"), "iD")
+	assert.Equal(t, lowerCamelConvert("BigPigeon"), "bigPigeon")
+	assert.Equal(t, lowerCamelConvert("big_pigeon"), "bigPigeon")
 }
 
-func TestHungaryConvert(t *testing.T) {
-	assert.Equal(t, hungaryConvert("UserDetail"), "user_detail")
-	assert.Equal(t, hungaryConvert("OneToOne"), "one_to_one")
-	assert.Equal(t, hungaryConvert("_UserDetail"), "_user_detail")
-	assert.Equal(t, hungaryConvert("userDetail"), "user_detail")
-	assert.Equal(t, hungaryConvert("UserDetailID"), "user_detail_id")
-	assert.Equal(t, hungaryConvert("NameHTTPtest"), "name_http_test")
-	assert.Equal(t, hungaryConvert("IDandValue"), "id_and_value")
-	assert.Equal(t, hungaryConvert("toyorm.User.field"), "toyorm.user.field")
+func TestSnakeConvert(t *testing.T) {
+	assert.Equal(t, snakeConvert("UserDetail"), "user_detail")
+	assert.Equal(t, snakeConvert("OneToOne"), "one_to_one")
+	assert.Equal(t, snakeConvert("_UserDetail"), "_user_detail")
+	assert.Equal(t, snakeConvert("userDetail"), "user_detail")
+	assert.Equal(t, snakeConvert("UserDetailID"), "user_detail_id")
+	assert.Equal(t, snakeConvert("NameHTTPtest"), "name_http_test")
+	assert.Equal(t, snakeConvert("IDandValue"), "id_and_value")
+	assert.Equal(t, snakeConvert("toyorm.User.field"), "toyorm.user.field")
 }
 
 func TestParseFieldRule(t *testing.T) {
@@ -43,25 +43,25 @@ func TestParseFieldRule(t *testing.T) {
 		}, oldTag)
 	}
 	{
-		rules, err := parseFieldRule("json=hungary(:field)|yaml=lit_camel(:field)")
+		rules, err := parseFieldRule("json=snake(:field)|yaml=lower_camel(:field)")
 		require.NoError(t, err)
 		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "")), "user_detail")
 		assert.Equal(t, rules["yaml"](testFieldArgs("UserDetail", "")), "userDetail")
 	}
 	{
-		rules, err := parseFieldRule("json=or(:tag, hungary(:field))")
+		rules, err := parseFieldRule("json=or(:tag, snake(:field))")
 		require.NoError(t, err)
 		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "customUserDetail")), "customUserDetail")
 	}
 
 	{
-		rules, err := parseFieldRule("json=hungary(:field)+s+:tag_extra")
+		rules, err := parseFieldRule("json=snake(:field)+s+:tag_extra")
 		require.NoError(t, err)
 		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", ",omitempty")), "user_details,omitempty")
 	}
 
 	{
-		rules, err := parseFieldRule("json=hungary(:field)+',omitempty'")
+		rules, err := parseFieldRule("json=snake(:field)+',omitempty'")
 		require.NoError(t, err)
 		assert.Equal(t, rules["json"](testFieldArgs("UserDetail", "")), "user_detail,omitempty")
 	}
@@ -80,4 +80,5 @@ func TestParseFieldRule(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, rules["binding"](testFieldArgs("UserDetail", "")), "a|b|c+d,e")
 	}
+
 }
