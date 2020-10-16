@@ -1,0 +1,11 @@
+//tagfmt -f "json=or(:tag_basic,snake(:field))+',omitempty'"
+
+package main
+
+type OrderDetail struct {
+    ID       string   `json:"id"`
+    UserName string   `json:"user"`
+    OrderID  string   `json:""`
+    Callback string   `json:""`
+    Address  []string `json:""`
+}
