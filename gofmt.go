@@ -217,6 +217,7 @@ func main() {
 
 func gofmtMain() {
 	flag.Usage = usage
+
 	flag.Parse()
 
 	if *cpuprofile != "" {
