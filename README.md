@@ -85,11 +85,112 @@ type Example struct {
 }
 ```
 
-## tag fill
+## tag fill(TODO)
 
 tag fill can fill specified key to field tag
 
+e.g 
+```
+//tagfmt -f "json=:field"
 
+type OrderDetail struct {
+	ID       string   ``
+	UserName string   `json:"name"`
+	OrderID  string   `json:"order"`
+	Callback string   ``
+	Address  []string ``
+}
+
+type OrderDetail struct {
+	ID       string   `json:"ID"`
+	UserName string   `json:"name"`
+	OrderID  string   `json:"order"`
+	Callback string   `json:"callback"`
+	Address  []string `json:"address"`
+}
+```
+
+if you didn't want to change the existing tag, use 'or' function
+
+```
+//tagfmt -f "json=or(:tag, :field)"
+
+type OrderDetail struct {
+	ID       string   ``
+	UserName string   `json:"name"`
+	OrderID  string   `json:"order"`
+	Callback string   ``
+	Address  []string ``
+}
+
+type OrderDetail struct {
+	ID       string   `json:"ID"`
+	UserName string   `json:"name"`
+	OrderID  string   `json:"order"`
+	Callback string   `json:"Callback"`
+	Address  []string `json:"Address"`
+}
+```
+
+and then I hope the tag convert to snake case style, use snake
+
+```
+//tagfmt -f "json=or(:tag, snake(:field))"
+type OrderDetail struct {
+	ID       string   ``
+	UserName string   `json:"name"`
+	OrderID  string   `json:"order"`
+	Callback string   ``
+	Address  []string ``
+}
+
+type OrderDetail struct {
+	ID       string   `json:"id"`
+	UserName string   `json:"name"`
+	OrderID  string   `json:"order"`
+	Callback string   `json:"callback"`
+	Address  []string `json:"address"`
+}
+```
+
+final my struct tag have some extra data need to keep it is, use ':tag_extra' to get extra data and '+' to link it
+
+```
+//tagfmt -f "json=snake(:field)+':tag_extra'"
+type OrderDetail struct {
+	ID       string   ``
+	UserName string   `json:",omitempty"`
+	OrderID  string   `json:"order,omitempty"`
+	Callback string   ``
+	Address  []string ``
+}
+
+type OrderDetail struct {
+	ID       string   `json:"id"`
+	UserName string   `json:"user_name,omitempty"`
+	OrderID  string   `json:"order_id,omitempty"`
+	Callback string   `json:"callback"`
+	Address  []string `json:"address"`
+}
+```
+
+fill rule have many functions and placeholders to avoid writing tags manually
+
+|function | purpose |
+|--------------|---------|
+|upper(s string) | a-z to A-Z
+|lower(s string) | A-Z to a-z
+|snake(s string) | convert upper_camel/lower_camel word to snake case
+|upper_camel(s string) | convert snake case/lower camel case to upper camel case
+|lower_camel(s string) | convert upper camel case/snake case to lower camel case
+|or(s string, s string) | return return first params if it's not zero,else return the second
+
+|placeholder | purpose |
+|------------|---------|
+|:field | replace with struct field name
+|:tag   | replace with  struct field existed tag's value
+|:tag_basic | replace with field existed tag's basic value (the value before the first ',' )
+|:tag_extra | replace with field existed tag's extra data (the value after the first ',' )
 
 ## tag sort 
 
@@ -109,5 +210,32 @@ package main
 
 type Example struct {
 	Data string `json:"data" xml:"data" yaml:"data"`
+}
+```
+
+### tag select
+
+when use `-p "regex"` the tagfmt only select fields that match the regular expression
+
+you also use the `-P "regex"` to invert the select
+
+```
+//tagfmt -P "^Ignore.*$"
+type OrderDetail struct {
+	ID       string   `json:"id" yaml:"id"`
+	UserName string   `json:"user_name" yaml:"user_name"`
+	Ignore   string   `json:"-" yaml:"-"`
+	OrderID  string   `json:"order_id" yaml:"order_id"`
+	Callback string   `json:"callback" yaml:"callback"`
+	Address  []string `json:"address" yaml:"address"`
+}
+
+type OrderDetail struct {
+	ID       string   `json:"id"        yaml:"id"`
+	UserName string   `json:"user_name" yaml:"user_name"`
+	Ignore   string   `json:"-" yaml:"-"`
+	OrderID  string   `json:"order_id" yaml:"order_id"`
+	Callback string   `json:"callback" yaml:"callback"`
+	Address  []string `json:"address"  yaml:"address"`
 }
 ```

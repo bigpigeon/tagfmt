@@ -88,7 +88,7 @@ func runTest(t *testing.T, in, out string) {
 					panic("err: " + err.Error() + " str: " + s)
 				}
 			}
-		case "-m":
+		case "-p":
 			nextVal = func(s string) {
 				var err error
 				*pattern, err = strconv.Unquote(s)
@@ -96,7 +96,7 @@ func runTest(t *testing.T, in, out string) {
 					panic(err)
 				}
 			}
-		case "-M":
+		case "-P":
 			nextVal = func(s string) {
 				var err error
 				*inversePattern, err = strconv.Unquote(s)
