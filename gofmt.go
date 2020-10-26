@@ -9,8 +9,10 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
+	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/scanner"
@@ -53,6 +55,18 @@ var (
 	exitCode   = 0
 	parserMode parser.Mode
 )
+
+// error define
+var (
+	ErrUnclosedQuote   = errors.New("unclosed quote")
+	ErrUnclosedBracket = errors.New("unclosed bracket")
+	ErrInvalidTag      = errors.New("Invalid tag ")
+)
+
+func NewAstError(fs *token.FileSet, n ast.Node, err error) error {
+	s := fs.Position(n.Pos())
+	return fmt.Errorf("%s:%d %s", filepath.Base(s.Filename), s.Line, err)
+}
 
 func report(err error) {
 	scanner.PrintError(os.Stderr, err)
@@ -116,6 +130,11 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 	}
 
 	var executor []Executor
+
+	executor = append(executor, &tagDoctor{
+		f:  file,
+		fs: fileSet,
+	})
 
 	if *fill != "" {
 		filler, err := newTagFill(file, fileSet, *fill)

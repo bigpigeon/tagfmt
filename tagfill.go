@@ -15,9 +15,6 @@ import (
 	"strings"
 )
 
-var ErrUnclosedQuote = errors.New("unclosed quote")
-var ErrUnclosedBracket = errors.New("unclosed bracket")
-
 type tagFillerFields struct {
 	fields []*ast.Field
 	keySet map[string]struct{}
@@ -91,7 +88,7 @@ func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
 					end = i + 1
 					_, keyValues, err := ParseTag(field.Tag.Value)
 					if err != nil {
-						s.Err = err
+						s.Err = NewAstError(s.fs, field.Tag, err)
 						return nil
 					}
 					for _, kv := range keyValues {

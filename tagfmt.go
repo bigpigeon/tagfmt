@@ -36,9 +36,10 @@ func (s *tagFormatter) Execute() error {
 	return s.Err
 }
 
-func (s *tagFormatter) recordFields(fields *[]*ast.Field) {
-	s.needFormat = append(s.needFormat, (*fields)[:])
-	*fields = nil
+func (s *tagFormatter) recordFields(fwt []*ast.Field) {
+	if len(fwt) != 0 {
+		s.needFormat = append(s.needFormat, fwt)
+	}
 }
 
 func getFieldName(node *ast.Field) string {
@@ -59,14 +60,28 @@ func getFieldOrTypeName(node *ast.Field) string {
 	return ""
 }
 
+type tagFormatterFields struct {
+	multiline []*ast.Field
+	oneline   []*ast.Field
+	anonymous []*ast.Field
+	s         *tagFormatter
+}
+
+func (fields *tagFormatterFields) reset(f *tagFormatter) {
+	f.recordFields(fields.multiline)
+	fields.multiline = nil
+	f.recordFields(fields.oneline)
+	fields.oneline = nil
+	f.recordFields(fields.anonymous)
+	fields.anonymous = nil
+}
+
 func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.StructType:
 		if n.Fields != nil {
+			var ffields tagFormatterFields
 
-			var multilineFields []*ast.Field
-			var oneLineFields []*ast.Field
-			var anonymousFields []*ast.Field
 			if len(n.Fields.List) == 0 {
 				return s
 			}
@@ -74,42 +89,39 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 			preEline := -1
 			preAnonymousELine := -1
 			for _, field := range n.Fields.List {
+				if field.Tag == nil {
+					ffields.reset(s)
+					continue
+				}
+
 				line := s.fs.Position(field.Pos()).Line
 				eline := s.fs.Position(field.End()).Line
 				fieldName := getFieldOrTypeName(field)
 				if fieldFilter(fieldName) == false {
 					continue
 				}
-
+				// the one way to distinguish the field with multiline anonymous struct and others
 				if len(field.Names) == 0 {
-					if field.Tag == nil || line-preAnonymousELine > 1 {
-						s.recordFields(&multilineFields)
+					if line-preAnonymousELine > 1 {
+						ffields.reset(s)
 					}
-					if field.Tag != nil {
-						anonymousFields = append(anonymousFields, field)
-					}
+					ffields.anonymous = append(ffields.anonymous, field)
 					preAnonymousELine = eline
-				} else if eline-line > 0 { // the one way to distinguish the field with multiline anonymous struct and others
-					if field.Tag == nil || line-preMultiELine > 1 {
-						s.recordFields(&multilineFields)
+				} else if eline-line > 0 {
+					if line-preMultiELine > 1 {
+						ffields.reset(s)
 					}
-					if field.Tag != nil {
-						multilineFields = append(multilineFields, field)
-					}
+					ffields.multiline = append(ffields.multiline, field)
 					preMultiELine = eline
 				} else {
 					if field.Tag == nil || line-preEline > 1 {
-						s.recordFields(&oneLineFields)
+						ffields.reset(s)
 					}
-					if field.Tag != nil {
-						oneLineFields = append(oneLineFields, field)
-					}
+					ffields.oneline = append(ffields.oneline, field)
 					preEline = eline
 				}
 			}
-			s.recordFields(&oneLineFields)
-			s.recordFields(&multilineFields)
-
+			ffields.reset(s)
 		}
 	}
 	return s
@@ -117,12 +129,12 @@ func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
 
 func fieldsTagFormat(fields []*ast.Field) error {
 	var longestList []int
-	for _, f := range fields {
-		_, keyValues, err := ParseTag(f.Tag.Value)
+	for _, field := range fields {
+		_, keyWords, err := ParseTag(field.Tag.Value)
 		if err != nil {
 			return err
 		}
-		for i, kv := range keyValues {
+		for i, kv := range keyWords {
 			if i >= len(longestList) {
 				longestList = append(longestList, 0)
 			}
@@ -130,21 +142,18 @@ func fieldsTagFormat(fields []*ast.Field) error {
 		}
 	}
 
-	for _, f := range fields {
-		if f.Tag != nil {
-			quote, keyValues, err := ParseTag(f.Tag.Value)
-			if err != nil {
-				// must be nil error
-				panic(err)
-			}
-			var keyValueRaw []string
-			for i, kv := range keyValues {
-				keyValueRaw = append(keyValueRaw, kv.String()+strings.Repeat(" ", longestList[i]-len(kv.String())))
-			}
-
-			f.Tag.Value = quote + strings.TrimRight(strings.Join(keyValueRaw, " "), " ") + quote
-			f.Tag.ValuePos = 0
+	for _, field := range fields {
+		quote, keyWords, err := ParseTag(field.Tag.Value)
+		if err != nil {
+			return err
 		}
+		var keyValueRaw []string
+		for i, kv := range keyWords {
+			keyValueRaw = append(keyValueRaw, kv.String()+strings.Repeat(" ", longestList[i]-len(kv.String())))
+		}
+
+		field.Tag.Value = quote + strings.TrimRight(strings.Join(keyValueRaw, " "), " ") + quote
+		field.Tag.ValuePos = 0
 	}
 	return nil
 }

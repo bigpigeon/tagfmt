@@ -59,6 +59,42 @@ func gofmtFlags(filename string, maxLines int) string {
 	return ""
 }
 
+// gofmtError looks for a comment of the form
+//
+//	//error: message
+//
+// within the first maxLines lines of the given file,
+// and returns the error string, if any. Otherwise it
+// returns the empty string.
+func gofmtError(filename string, maxLines int) string {
+	f, err := os.Open(filename)
+	if err != nil {
+		return "" // ignore errors - they will be found later
+	}
+	defer f.Close()
+
+	// initialize scanner
+	var s scanner.Scanner
+	s.Init(f)
+	s.Error = func(*scanner.Scanner, string) {}       // ignore errors
+	s.Mode = scanner.GoTokens &^ scanner.SkipComments // want comments
+
+	// look for //gofmt comment
+	for s.Line <= maxLines {
+		switch s.Scan() {
+		case scanner.Comment:
+			const prefix = "//error: "
+			if t := s.TokenText(); strings.HasPrefix(t, prefix) {
+				return strings.TrimSpace(t[len(prefix):])
+			}
+		case scanner.EOF:
+			return ""
+		}
+
+	}
+	return ""
+}
+
 func runTest(t *testing.T, in, out string) {
 	// process flags
 	stdin := false
@@ -110,12 +146,23 @@ func runTest(t *testing.T, in, out string) {
 	}
 
 	initParserMode()
+	mustError := strings.TrimSpace(gofmtError(in, 20))
 
 	var buf bytes.Buffer
 	err := processFile(in, nil, &buf, stdin)
 	if err != nil {
-		t.Error(err)
+		if mustError != "" {
+			errStr := strings.TrimSpace(strings.Replace(err.Error(), "\n", "", -1))
+			if mustError != errStr {
+				t.Error("expected got err \"" + mustError + "\", in fact got err \"" + errStr + "\"")
+
+			}
+		} else {
+			t.Error(err)
+		}
 		return
+	} else if mustError != "" {
+		t.Error("file " + in + " must return error")
 	}
 
 	expected, err := ioutil.ReadFile(out)

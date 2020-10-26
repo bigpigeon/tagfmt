@@ -8,13 +8,10 @@
 package main
 
 import (
-	"errors"
 	"go/ast"
 	"sort"
 	"strings"
 )
-
-var ErrInvalidTag = errors.New("Invalid tag ")
 
 type tagSorter struct {
 	f      *ast.File
