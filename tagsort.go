@@ -36,17 +36,18 @@ func (s *tagSorter) Execute() error {
 }
 
 func (s *tagSorter) Visit(node ast.Node) ast.Visitor {
-	switch n := node.(type) {
-	case *ast.StructType:
-		if n.Fields != nil {
-			for _, field := range n.Fields.List {
-				if field.Tag != nil {
-					s.fields = append(s.fields, field)
-				}
+	visit := toyVisit{executor: s.executor}
+	return visit.Visit(node)
+}
+
+func (s *tagSorter) executor(name string, n *ast.StructType) {
+	if n.Fields != nil {
+		for _, field := range n.Fields.List {
+			if fieldFilter(getFieldName(field)) && field.Tag != nil {
+				s.fields = append(s.fields, field)
 			}
 		}
 	}
-	return s
 }
 
 func sortField(field *ast.Field) error {
@@ -59,10 +60,6 @@ func sortField(field *ast.Field) error {
 	})
 	var keyValuesRaw []string
 	for _, kv := range keyValues {
-		fieldName := getFieldOrTypeName(field)
-		if fieldFilter(fieldName) == false {
-			continue
-		}
 		keyValuesRaw = append(keyValuesRaw, kv.String())
 	}
 

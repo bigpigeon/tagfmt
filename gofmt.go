@@ -30,20 +30,20 @@ import (
 
 var (
 	// main operation modes
-	list           = flag.Bool("l", false, "list files whose formatting differs from tagfmt's")
-	align          = flag.Bool("a", true, "align with nearby field's tag")
-	write          = flag.Bool("w", false, "write result to (source) file instead of stdout")
-	tagSort        = flag.Bool("s", false, "sort struct tag by key")
-	doDiff         = flag.Bool("d", false, "display diffs instead of rewriting files")
-	allErrors      = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
-	fill           = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=snake(_val)")
-	pattern        = flag.String("p", ".*", "field name with regular expression pattern")
-	inversePattern = flag.String("P", "", "field name with inverse regular expression pattern")
+	list                 = flag.Bool("l", false, "list files whose formatting differs from tagfmt's")
+	align                = flag.Bool("a", true, "align with nearby field's tag")
+	write                = flag.Bool("w", false, "write result to (source) file instead of stdout")
+	tagSort              = flag.Bool("s", false, "sort struct tag by key")
+	doDiff               = flag.Bool("d", false, "display diffs instead of rewriting files")
+	allErrors            = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
+	fill                 = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=snake(_val)")
+	pattern              = flag.String("p", ".*", "field name with regular expression pattern")
+	inversePattern       = flag.String("P", "", "field name with inverse regular expression pattern")
+	structPattern        = flag.String("sp", ".*", "struct name with regular expression pattern")
+	inverseStructPattern = flag.String("sP", "", "struct name with inverse regular expression pattern")
 	// debugging
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
 )
-
-var selRule *regexp.Regexp
 
 const (
 	tabWidth    = 8
@@ -114,6 +114,18 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 		}
 	} else {
 		err := selectInit(*pattern, false)
+		if err != nil {
+			return err
+		}
+	}
+
+	if *inverseStructPattern != "" {
+		err := structSelectInit(*inverseStructPattern, true)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := structSelectInit(*structPattern, false)
 		if err != nil {
 			return err
 		}
@@ -391,9 +403,9 @@ type Executor interface {
 
 var fieldFilter func(s string) bool
 
-func selectInit(s string, inverse bool) error {
+func selectInit(expr string, inverse bool) error {
 	var err error
-	selRule, err = regexp.Compile(s)
+	selRule, err := regexp.Compile(expr)
 	if err != nil {
 		return err
 	}
@@ -403,6 +415,26 @@ func selectInit(s string, inverse bool) error {
 		}
 	} else {
 		fieldFilter = func(s string) bool {
+			return selRule.MatchString(s)
+		}
+	}
+	return nil
+}
+
+var structFieldSelect func(s string) bool
+
+func structSelectInit(expr string, inverse bool) error {
+	var err error
+	selRule, err := regexp.Compile(expr)
+	if err != nil {
+		return err
+	}
+	if inverse {
+		structFieldSelect = func(s string) bool {
+			return !selRule.MatchString(s)
+		}
+	} else {
+		structFieldSelect = func(s string) bool {
 			return selRule.MatchString(s)
 		}
 	}

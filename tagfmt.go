@@ -54,9 +54,9 @@ func getFieldOrTypeName(node *ast.Field) string {
 	if len(node.Names) > 0 {
 		return node.Names[0].Name
 	}
-	if ident, ok := node.Type.(*ast.Ident); ok {
-		return ident.Name
-	}
+	//if ident, ok := node.Type.(*ast.Ident); ok {
+	//	return ident.Name
+	//}
 	return ""
 }
 
@@ -76,55 +76,53 @@ func (fields *tagFormatterFields) reset(f *tagFormatter) {
 	fields.anonymous = nil
 }
 
-func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
-	switch n := node.(type) {
-	case *ast.StructType:
-		if n.Fields != nil {
-			var ffields tagFormatterFields
+func (s *tagFormatter) executor(name string, n *ast.StructType) {
+	if n.Fields != nil {
+		var ffields tagFormatterFields
 
-			if len(n.Fields.List) == 0 {
-				return s
-			}
-			preMultiELine := -1
-			preEline := -1
-			preAnonymousELine := -1
-			for _, field := range n.Fields.List {
-				if field.Tag == nil {
-					ffields.reset(s)
-					continue
-				}
-
-				line := s.fs.Position(field.Pos()).Line
-				eline := s.fs.Position(field.End()).Line
-				fieldName := getFieldOrTypeName(field)
-				if fieldFilter(fieldName) == false {
-					continue
-				}
-				// the one way to distinguish the field with multiline anonymous struct and others
-				if len(field.Names) == 0 {
-					if line-preAnonymousELine > 1 {
-						ffields.reset(s)
-					}
-					ffields.anonymous = append(ffields.anonymous, field)
-					preAnonymousELine = eline
-				} else if eline-line > 0 {
-					if line-preMultiELine > 1 {
-						ffields.reset(s)
-					}
-					ffields.multiline = append(ffields.multiline, field)
-					preMultiELine = eline
-				} else {
-					if field.Tag == nil || line-preEline > 1 {
-						ffields.reset(s)
-					}
-					ffields.oneline = append(ffields.oneline, field)
-					preEline = eline
-				}
-			}
-			ffields.reset(s)
+		if len(n.Fields.List) == 0 {
+			return
 		}
+		preMultiELine := -1
+		preEline := -1
+		preAnonymousELine := -1
+		for _, field := range n.Fields.List {
+			fieldName := getFieldOrTypeName(field)
+			if field.Tag == nil || fieldFilter(fieldName) == false {
+				ffields.reset(s)
+				continue
+			}
+
+			line := s.fs.Position(field.Pos()).Line
+			eline := s.fs.Position(field.End()).Line
+			// the one way to distinguish the field with multiline anonymous struct and others
+			if len(field.Names) == 0 {
+				if line-preAnonymousELine > 1 {
+					ffields.reset(s)
+				}
+				ffields.anonymous = append(ffields.anonymous, field)
+				preAnonymousELine = eline
+			} else if eline-line > 0 {
+				if line-preMultiELine > 1 {
+					ffields.reset(s)
+				}
+				ffields.multiline = append(ffields.multiline, field)
+				preMultiELine = eline
+			} else {
+				if line-preEline > 1 {
+					ffields.reset(s)
+				}
+				ffields.oneline = append(ffields.oneline, field)
+				preEline = eline
+			}
+		}
+		ffields.reset(s)
 	}
-	return s
+}
+
+func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
+	visit := toyVisit{executor: s.executor}
+	return visit.Visit(node)
 }
 
 func fieldsTagFormat(fields []*ast.Field) error {

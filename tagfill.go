@@ -63,43 +63,44 @@ func (s *tagFiller) Execute() error {
 }
 
 func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
-	switch n := node.(type) {
-	case *ast.StructType:
-		if n.Fields != nil {
-			keySet := map[string]struct{}{}
-			var start int
-			var end int
-			var preFieldLine int
-			for i, field := range n.Fields.List {
-				fieldName := getFieldOrTypeName(field)
-				if fieldFilter(fieldName) == false {
-					continue
-				}
-				line := s.fs.Position(field.Pos()).Line
-				// If there are blank lines or nil field tag in the structure, reset
-				if field.Tag == nil || preFieldLine+1 < line {
-					s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:end], keySet})
-					start = i
-					end = i + 1
-					keySet = map[string]struct{}{}
-				}
-				preFieldLine = line
-				if field.Tag != nil {
-					end = i + 1
-					_, keyValues, err := ParseTag(field.Tag.Value)
-					if err != nil {
-						s.Err = NewAstError(s.fs, field.Tag, err)
-						return nil
-					}
-					for _, kv := range keyValues {
-						keySet[kv.Key] = struct{}{}
-					}
-				}
-				s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:], keySet})
+	visit := toyVisit{executor: s.executor}
+	return visit.Visit(node)
+}
+
+func (s *tagFiller) executor(name string, n *ast.StructType) {
+	if n.Fields != nil {
+		keySet := map[string]struct{}{}
+		var start int
+		var end int
+		var preFieldLine int
+		for i, field := range n.Fields.List {
+			fieldName := getFieldOrTypeName(field)
+			if fieldFilter(fieldName) == false {
+				continue
 			}
+			line := s.fs.Position(field.Pos()).Line
+			// If there are blank lines or nil field tag in the structure, reset
+			if field.Tag == nil || preFieldLine+1 < line {
+				s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:end], keySet})
+				start = i
+				end = i + 1
+				keySet = map[string]struct{}{}
+			}
+			preFieldLine = line
+			if field.Tag != nil {
+				end = i + 1
+				_, keyValues, err := ParseTag(field.Tag.Value)
+				if err != nil {
+					s.Err = NewAstError(s.fs, field.Tag, err)
+					return
+				}
+				for _, kv := range keyValues {
+					keySet[kv.Key] = struct{}{}
+				}
+			}
+			s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:], keySet})
 		}
 	}
-	return s
 }
 
 func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[string]tagFieldRule) {

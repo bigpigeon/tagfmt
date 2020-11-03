@@ -98,8 +98,13 @@ func gofmtError(filename string, maxLines int) string {
 func runTest(t *testing.T, in, out string) {
 	// process flags
 	stdin := false
+	*align = true
 	*fill = ""
 	*tagSort = false
+	*pattern = ".*"
+	*inversePattern = ""
+	*structPattern = ".*"
+	*inverseStructPattern = ""
 	var nextVal func(s string)
 	for _, flag := range strings.Split(gofmtFlags(in, 20), " ") {
 		if nextVal != nil {
@@ -136,6 +141,22 @@ func runTest(t *testing.T, in, out string) {
 			nextVal = func(s string) {
 				var err error
 				*inversePattern, err = strconv.Unquote(s)
+				if err != nil {
+					panic(err)
+				}
+			}
+		case "-sp":
+			nextVal = func(s string) {
+				var err error
+				*structPattern, err = strconv.Unquote(s)
+				if err != nil {
+					panic(err)
+				}
+			}
+		case "-sP":
+			nextVal = func(s string) {
+				var err error
+				*inverseStructPattern, err = strconv.Unquote(s)
 				if err != nil {
 					panic(err)
 				}

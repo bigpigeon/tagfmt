@@ -30,27 +30,29 @@ type tagDoctor struct {
 	Err tagDockerErr
 }
 
-func (t *tagDoctor) Visit(node ast.Node) (w ast.Visitor) {
-	switch n := node.(type) {
-	case *ast.StructType:
-		if n.Fields != nil {
-			for _, field := range n.Fields.List {
-				fieldName := getFieldOrTypeName(field)
-				if fieldFilter(fieldName) == false {
-					continue
-				}
-				if field.Tag != nil {
-					_, _, err := ParseTag(field.Tag.Value)
-					if err != nil {
-						if len(t.Err) < tagDockerMaxErr {
-							t.Err = append(t.Err, NewAstError(t.fs, field.Tag, err))
-						}
+func (s *tagDoctor) Visit(node ast.Node) ast.Visitor {
+	visit := toyVisit{executor: s.executor}
+	return visit.Visit(node)
+}
+
+func (t *tagDoctor) executor(name string, n *ast.StructType) {
+	if n.Fields != nil {
+		for _, field := range n.Fields.List {
+			fieldName := getFieldOrTypeName(field)
+			if fieldFilter(fieldName) == false {
+				continue
+			}
+			if field.Tag != nil {
+				_, _, err := ParseTag(field.Tag.Value)
+				if err != nil {
+					if len(t.Err) < tagDockerMaxErr {
+						t.Err = append(t.Err, NewAstError(t.fs, field.Tag, err))
 					}
 				}
 			}
 		}
 	}
-	return t
+	return
 }
 
 func (t *tagDoctor) Scan() error {

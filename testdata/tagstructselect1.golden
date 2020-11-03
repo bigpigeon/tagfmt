@@ -1,0 +1,16 @@
+//tagfmt -sp "^User$" -f "json=snake(:field)"
+package main
+
+type User struct {
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	City     string `json:"city"`
+	State    string `json:"state"`
+}
+
+type UserDB struct {
+	ID       int    `toyorm:"primary key;auto_increment"`
+	Name     string `toyorm:"type:VARCHAR(1024)"`
+	Password string `toyorm:"type:VARCHAR(1024)"`
+	City     string `toyorm:"type:VARCHAR(1024)"`
+}
