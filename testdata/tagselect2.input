@@ -1,0 +1,13 @@
+//tagfmt -p "^$" -f "json=',inline'|form=',inline'"
+package main
+
+type Order struct {
+	ID       string   `json:"id" yaml:"id"`
+	UserName string   `json:"user_name" yaml:"user_name"`
+}
+
+type OrderDetail struct {
+	Order ``
+	Callback string   `json:"callback" yaml:"callback"`
+	Address  []string `json:"address" yaml:"address"`
+}

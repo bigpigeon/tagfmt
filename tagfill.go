@@ -70,10 +70,9 @@ func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
 func (s *tagFiller) executor(name string, n *ast.StructType) {
 	if n.Fields != nil {
 		keySet := map[string]struct{}{}
-		var start int
-		var end int
+		var cacheFieldList []*ast.Field
 		var preFieldLine int
-		for i, field := range n.Fields.List {
+		for _, field := range n.Fields.List {
 			fieldName := getFieldOrTypeName(field)
 			if fieldFilter(fieldName) == false {
 				continue
@@ -81,24 +80,25 @@ func (s *tagFiller) executor(name string, n *ast.StructType) {
 			line := s.fs.Position(field.Pos()).Line
 			// If there are blank lines or nil field tag in the structure, reset
 			if field.Tag == nil || preFieldLine+1 < line {
-				s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:end], keySet})
-				start = i
-				end = i + 1
+				s.needFillList = append(s.needFillList, tagFillerFields{cacheFieldList, keySet})
 				keySet = map[string]struct{}{}
+				cacheFieldList = nil
 			}
 			preFieldLine = line
 			if field.Tag != nil {
-				end = i + 1
 				_, keyValues, err := ParseTag(field.Tag.Value)
 				if err != nil {
 					s.Err = NewAstError(s.fs, field.Tag, err)
 					return
 				}
+				cacheFieldList = append(cacheFieldList, field)
 				for _, kv := range keyValues {
 					keySet[kv.Key] = struct{}{}
 				}
 			}
-			s.needFillList = append(s.needFillList, tagFillerFields{n.Fields.List[start:], keySet})
+		}
+		if cacheFieldList != nil {
+			s.needFillList = append(s.needFillList, tagFillerFields{cacheFieldList, keySet})
 		}
 	}
 }
