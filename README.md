@@ -241,3 +241,9 @@ type OrderDetail struct {
 	Address  []string `json:"address"  yaml:"address"`
 }
 ```
+
+### struct select
+
+just like tag select, use `-sp "regex"` regular expression to match what struct you want
+
+use the `-sP "regex"` to invert the select

@@ -21,7 +21,12 @@ usage: tagfmt [flags] [path ...]
   -p string
         field name with regular expression pattern (default ".*")
   -s    sort struct tag by key
+  -sP string
+        struct name with inverse regular expression pattern
+  -sp string
+        struct name with regular expression pattern (default ".*")
   -w    write result to (source) file instead of stdout
+
 
 Debugging support:
 	-cpuprofile filename
