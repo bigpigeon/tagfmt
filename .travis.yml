@@ -2,9 +2,6 @@ language: go
 
 go:
   - 1.15.x
-  - 1.14.x
-  - 1.13.x
-  - master
 
 install:
   - go get -t -v ./...
@@ -19,8 +16,8 @@ script:
         suffix=".exe"
       fi
       for GOARCH in 386 amd64;do
-        out="building bin/tagfmt_${OS}_${GOARCH}${suffix}"
-        echo "$out"
+        out="bin/tagfmt_${OS}_${GOARCH}${suffix}"
+        echo "building $out"
         go build -o $out
       done
     done
