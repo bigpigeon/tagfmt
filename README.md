@@ -1,5 +1,7 @@
 # tagfmt
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/bigpigeon/tagfmt)](https://goreportcard.com/report/github.com/bigpigeon/tagfmt)
+
 Tagfmt formats struct tag within Go programs.
 
 It uses blanks for alignment. tag must be in key:"value" pair format
