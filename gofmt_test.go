@@ -101,6 +101,7 @@ func runTest(t *testing.T, in, out string) {
 	*align = true
 	*fill = ""
 	*tagSort = false
+	*tagSortOrder = ""
 	*pattern = ".*"
 	*inversePattern = ""
 	*structPattern = ".*"
@@ -157,6 +158,14 @@ func runTest(t *testing.T, in, out string) {
 			nextVal = func(s string) {
 				var err error
 				*inverseStructPattern, err = strconv.Unquote(s)
+				if err != nil {
+					panic(err)
+				}
+			}
+		case "-so":
+			nextVal = func(s string) {
+				var err error
+				*tagSortOrder, err = strconv.Unquote(s)
 				if err != nil {
 					panic(err)
 				}

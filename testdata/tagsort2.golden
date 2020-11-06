@@ -1,0 +1,6 @@
+//tagfmt -s -so "json|yaml|desc"
+package main
+
+type Example struct {
+	Data string `json:"data" yaml:"data" desc:"some inuse data"`
+}

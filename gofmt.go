@@ -34,6 +34,7 @@ var (
 	align                = flag.Bool("a", true, "align with nearby field's tag")
 	write                = flag.Bool("w", false, "write result to (source) file instead of stdout")
 	tagSort              = flag.Bool("s", false, "sort struct tag by key")
+	tagSortOrder         = flag.String("so", "", "sort struct tag keys order e.g json|yaml|desc")
 	doDiff               = flag.Bool("d", false, "display diffs instead of rewriting files")
 	allErrors            = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
 	fill                 = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=snake(_val)")
@@ -157,7 +158,7 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 	}
 
 	if *tagSort {
-		executor = append(executor, newTagSort(file))
+		executor = append(executor, newTagSort(file, strings.Split(*tagSortOrder, "|")))
 	}
 	if *align {
 		executor = append(executor, newTagFmt(file, fileSet))

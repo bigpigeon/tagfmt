@@ -23,9 +23,12 @@ usage: tagfmt [flags] [path ...]
   -s    sort struct tag by key
   -sP string
         struct name with inverse regular expression pattern
+  -so string
+        sort struct tag keys order e.g json|yaml|desc
   -sp string
         struct name with regular expression pattern (default ".*")
   -w    write result to (source) file instead of stdout
+
 
 
 Debugging support:
@@ -41,7 +44,7 @@ Examples
 		Name     string `json:"name" xml:"name" yaml:"name"`
 		Password string `json:"password" xml:"password" yaml:"password"`
 	}
-
+	// after format
 	struct User struct {
 		Name     string `json:"name"     xml:"name"     yaml:"name"    `
 		Password string `json:"password" xml:"password" yaml:"password"`
@@ -54,9 +57,21 @@ When invoke with -s tagfmt will sort struct tags by key.
 	struct User struct {
 		Name     string `xml:"name" json:"name" yaml:"name"`
 	}
-
+	// after format
 	struct User struct {
 		Name     string `json:"name" xml:"name" yaml:"name"`
+	}
+
+When invoke with -so <order> and -s will sort struct tags by your custom <order>
+
+	//tagfmt -s -so "json|yaml|desc"
+	package main
+	type Example struct {
+		Data string `desc:"some inuse data" yaml:"data" json:"data" `
+	}
+
+	type Example struct {
+		Data string `json:"data" yaml:"data" desc:"some inuse data"`
 	}
 
 When invoke with -f "*" tagfmt will fill missing key and empty value in group(group split by black line or field without tag)
@@ -70,7 +85,7 @@ When invoke with -f "*" tagfmt will fill missing key and empty value in group(gr
 		City     string `json:"group" xml:"group"`
 		State    string `gorm:"type:varchar(64)" xml:"state"`
 	}
-
+	// after format
 	type User struct {
 		Name     string `json:"name"    xml:""`
 		Password string `xml:"password" json:""`
@@ -89,7 +104,7 @@ You also can only fill "json" tag key and field name as its value
 		Tag string ``
 		Fee float32 ``
 	}
-
+	// after format
 	type Order struct {
 		ID  string  `json:"ID"`
 		Tag string  `json:"Tag"`
@@ -108,7 +123,7 @@ You also can only fill "json" tag key and field name as its value
 		Callback string   ``
 		Address  []string ``
 	}
-
+	// after format
 	type OrderDetail struct {
 		ID       string   `json:"id,omitempty"`
 		UserName string   `json:"user_name,omitempty"`

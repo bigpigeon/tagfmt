@@ -16,6 +16,7 @@ import (
 type tagSorter struct {
 	f      *ast.File
 	Err    error
+	order  []string
 	fields []*ast.Field
 }
 
@@ -26,7 +27,7 @@ func (s *tagSorter) Scan() error {
 
 func (s *tagSorter) Execute() error {
 	for _, field := range s.fields {
-		err := sortField(field)
+		err := sortField(field, s.order)
 		if err != nil {
 			s.Err = err
 			return err
@@ -50,12 +51,19 @@ func (s *tagSorter) executor(name string, n *ast.StructType) {
 	}
 }
 
-func sortField(field *ast.Field) error {
+func sortField(field *ast.Field, order []string) error {
 	quote, keyValues, err := ParseTag(field.Tag.Value)
 	if err != nil {
 		return err
 	}
 	sort.Slice(keyValues, func(i, j int) bool {
+		for _, o := range order {
+			if keyValues[i].Key == o {
+				return true
+			} else if keyValues[j].Key == o {
+				return false
+			}
+		}
 		return keyValues[i].Key < keyValues[j].Key
 	})
 	var keyValuesRaw []string
@@ -68,8 +76,8 @@ func sortField(field *ast.Field) error {
 	return nil
 }
 
-func newTagSort(f *ast.File) *tagSorter {
-	s := &tagSorter{f: f}
+func newTagSort(f *ast.File, order []string) *tagSorter {
+	s := &tagSorter{f: f, order: order}
 
 	return s
 }

@@ -2,6 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/bigpigeon/tagfmt)](https://goreportcard.com/report/github.com/bigpigeon/tagfmt)
 [![Build Status](https://travis-ci.org/bigpigeon/tagfmt.svg?branch=master)](https://travis-ci.org/bigpigeon/tagfmt)
+[![codecov](https://codecov.io/gh/bigpigeon/tagfmt/branch/master/graph/badge.svg?token=URk5NrwzyL)](https://codecov.io/gh/bigpigeon/tagfmt)
 
 Tagfmt formats struct tag within Go programs.
 
@@ -31,6 +32,8 @@ usage: tagfmt [flags] [path ...]
   -s    sort struct tag by key
   -sP string
         struct name with inverse regular expression pattern
+  -so string
+        sort struct tag keys order e.g json|yaml|desc
   -sp string
         struct name with regular expression pattern (default ".*")
   -w    write result to (source) file instead of stdout
@@ -75,12 +78,7 @@ type Example struct {
     NewLineData string `xml:"new_line_data" yaml:"new_line_data" json:"new_line_data"`
     NewLineOtherData string `xml:"new_line_other_data" yaml:"new_line_other_data"  json:"new_line_other_data"`
 }
-```
-
-result
-
-```go 
-//tagfmt
+// after format
 package main
 
 type Example struct {
@@ -107,6 +105,8 @@ type OrderDetail struct {
 	Callback string   ``
 	Address  []string ``
 }
+// after format
+package main
 
 type OrderDetail struct {
 	ID       string   `json:"ID"`
@@ -129,6 +129,8 @@ type OrderDetail struct {
 	Callback string   ``
 	Address  []string ``
 }
+// after format
+package main
 
 type OrderDetail struct {
 	ID       string   `json:"ID"`
@@ -150,6 +152,8 @@ type OrderDetail struct {
 	Callback string   ``
 	Address  []string ``
 }
+// after format
+package main
 
 type OrderDetail struct {
 	ID       string   `json:"id"`
@@ -171,6 +175,8 @@ type OrderDetail struct {
 	Callback string   ``
 	Address  []string ``
 }
+// after format
+package main
 
 type OrderDetail struct {
 	ID       string   `json:"id"`
@@ -209,18 +215,31 @@ package main
 type Example struct {
 	Data string `xml:"data" yaml:"data"  json:"data"  `
 }
-```
-
-after sort 
-
-```
-//tagfmt -s 
+// after format
 package main
 
 type Example struct {
 	Data string `json:"data" xml:"data" yaml:"data"`
 }
 ```
+
+you can use tag sort order to custom sort order
+
+```
+//tagfmt -s -so "json|yaml|desc"
+package main
+type Example struct {
+	Data string `desc:"some inuse data" yaml:"data" json:"data" `
+}
+// after format
+//tagfmt -s -so "json|yaml|desc"
+package main
+
+type Example struct {
+	Data string `json:"data" yaml:"data" desc:"some inuse data"`
+}
+```
+
 
 ### tag select
 
