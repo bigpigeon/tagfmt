@@ -29,6 +29,7 @@ after_success:
 deploy:
   provider: releases
   file: bin/*
+  file_glob: true
   api_key: $GITHUB_TOKEN
   on:
     tags: true
