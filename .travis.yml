@@ -8,6 +8,7 @@ install:
 
 
 script:
+  - go test -coverprofile=coverage.txt -covermode=atomic
   - |
     for OS in linux darwin windows;do
       suffix=""
@@ -16,13 +17,20 @@ script:
         suffix=".exe"
       fi
       for GOARCH in 386 amd64;do
-        out="bin/tagfmt_${OS}_${GOARCH}${suffix}"
+        out="bin/tagfmt${suffix}"
         echo "building $out"
         go build -o $out
+        if [ $OS == "windows" ];
+        then
+          compress="bin/tagfmt_${OS}_${GOARCH}.zip"
+          zip $compress $out
+          rm $out
+        else
+          compress="bin/tagfmt_${OS}_${GOARCH}.tar.gz"
+          tar czf $compress $out --remove-files
+        fi
       done
     done
-  - go test -coverprofile=coverage.txt -covermode=atomic
-
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
