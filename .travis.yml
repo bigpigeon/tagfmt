@@ -31,7 +31,7 @@ deploy:
   file: bin/*
   on:
     tags: true
-    repo: bigpigeon/tagfmtn
+    repo: bigpigeon/tagfmt
     branch: master
   skip_cleanup: true
   #overwrite: true
