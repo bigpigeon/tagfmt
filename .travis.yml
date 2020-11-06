@@ -10,23 +10,25 @@ install:
 script:
   - go test -coverprofile=coverage.txt -covermode=atomic
   - |
-    for OS in linux darwin windows;do
+    for GOOS in linux darwin windows;do
       suffix=""
-      if [ $OS == "windows" ];
+      if [ $GOOS == "windows" ];
       then
         suffix=".exe"
       fi
       for GOARCH in 386 amd64;do
         out="bin/tagfmt${suffix}"
-        echo "building $out"
-        go build -o $out
-        if [ $OS == "windows" ];
+        echo "building ${GOOS}/$GOARCH"
+        CGOENABLE=0 go build -o $out
+        if [ $GOOS == "windows" ];
         then
-          compress="bin/tagfmt_${OS}_${GOARCH}.zip"
+          compress="bin/tagfmt_${GOOS}_${GOARCH}.zip"
+          echo "compressing $compress"
           zip $compress $out
           rm $out
         else
-          compress="bin/tagfmt_${OS}_${GOARCH}.tar.gz"
+          compress="bin/tagfmt_${GOOS}_${GOARCH}.tar.gz"
+          echo "compressing $compress"
           tar czf $compress $out --remove-files
         fi
       done
