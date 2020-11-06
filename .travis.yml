@@ -29,6 +29,7 @@ after_success:
 deploy:
   provider: releases
   file: bin/*
+  github_token: $GITHUB_TOKEN
   on:
     tags: true
     repo: bigpigeon/tagfmt
