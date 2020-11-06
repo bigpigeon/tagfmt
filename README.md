@@ -1,6 +1,7 @@
 # tagfmt
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/bigpigeon/tagfmt)](https://goreportcard.com/report/github.com/bigpigeon/tagfmt)
+[![Build Status](https://travis-ci.org/bigpigeon/tagfmt.svg?branch=master)](https://travis-ci.org/bigpigeon/tagfmt)
 
 Tagfmt formats struct tag within Go programs.
 

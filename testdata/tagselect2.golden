@@ -7,7 +7,7 @@ type Order struct {
 }
 
 type OrderDetail struct {
-	Order    `json:",inline" form:",inline"`
+	Order    `form:",inline" json:",inline"`
 	Callback string   `json:"callback" yaml:"callback"`
 	Address  []string `json:"address" yaml:"address"`
 }

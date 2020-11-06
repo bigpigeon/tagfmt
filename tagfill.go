@@ -128,7 +128,6 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 				for k := range missingKeySet {
 					missingKeys = append(missingKeys, k)
 				}
-				sort.Strings(missingKeys)
 
 				for _, k := range missingKeys {
 					appendKeyValues = append(appendKeyValues, KeyValue{
@@ -150,6 +149,7 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 			for _, kv := range keyValues {
 				delete(missingRuleSet, kv.Key)
 			}
+
 			for k, rule := range missingRuleSet {
 				appendKeyValues = append(appendKeyValues, KeyValue{
 					Key:   k,
@@ -157,6 +157,9 @@ func fieldsTagFill(fields []*ast.Field, keySet map[string]struct{}, ruleSet map[
 					Value: rule(newRuleArgs(f, "")),
 				})
 			}
+			sort.Slice(appendKeyValues, func(i, j int) bool {
+				return appendKeyValues[i].Key < appendKeyValues[j].Key
+			})
 			var keyValueRaw []string
 			for _, v := range keyValues {
 				keyValueRaw = append(keyValueRaw, v.String())
