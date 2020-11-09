@@ -1,0 +1,11 @@
+//tagfmt -f "json=lower(:tag)"
+
+package main
+
+type OrderDetail struct {
+	ID       string   `json:"id"`
+	UserName string   `json:"user"`
+	OrderID  string   `json:"orderid"`
+	Callback string   `json:"callback"`
+	Address  []string `json:"address"`
+}

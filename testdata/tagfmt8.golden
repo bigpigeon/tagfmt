@@ -1,0 +1,7 @@
+//tagfmt
+package main
+
+var GlobalConfig = struct {
+	Concurrency int    `json:"concurrency" yaml:"concurrency"`
+	Output      string `json:"output"      yaml:"output"`
+}{}
