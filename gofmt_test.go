@@ -98,14 +98,7 @@ func gofmtError(filename string, maxLines int) string {
 func runTest(t *testing.T, in, out string) {
 	// process flags
 	stdin := false
-	*align = true
-	*fill = ""
-	*tagSort = false
-	*tagSortOrder = ""
-	*pattern = ".*"
-	*inversePattern = ""
-	*structPattern = ".*"
-	*inverseStructPattern = ""
+	resetFlags()
 	var nextVal func(s string)
 	for _, flag := range strings.Split(gofmtFlags(in, 20), " ") {
 		if nextVal != nil {

@@ -46,6 +46,22 @@ var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
 )
 
+func resetFlags() {
+	*list = false
+	*align = true
+	*write = false
+	*tagSort = false
+	*tagSortOrder = ""
+	*doDiff = false
+	*allErrors = false
+	*fill = ""
+	*pattern = ".*"
+	*inversePattern = ""
+	*structPattern = ".*"
+	*inverseStructPattern = ""
+	*cpuprofile = ""
+}
+
 const (
 	tabWidth    = 8
 	printerMode = printer.UseSpaces | printer.TabIndent
