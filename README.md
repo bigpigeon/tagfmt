@@ -14,6 +14,16 @@ tagfmt feature:
 - fill specified tag key to field
 - sort field tags
 
+## get tagfmt 
+
+you can download from github releases
+
+https://github.com/bigpigeon/tagfmt/releases
+
+or go get 
+
+    go get github.com/bigpigeon/tagfmt
+
 ## usage 
 ```
 usage: tagfmt [flags] [path ...]
