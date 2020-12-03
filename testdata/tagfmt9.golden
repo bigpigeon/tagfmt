@@ -1,0 +1,7 @@
+//tagfmt
+package main
+
+var RegionSetting = struct {
+	Language string `desc:"e.g 中文 にほんご"          json:"language"`
+	Keyboard string `desc:"your keyboard layout" json:"keyboard"`
+}{}

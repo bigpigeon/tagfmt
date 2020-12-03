@@ -334,7 +334,7 @@ func parseFieldRuleSingle(r string) (tagFieldRule, error) {
 }
 
 func findNextQuote(s string, i int, quote byte) int {
-	for j := i + 1; j < len(s); j++ {
+	for j := i; j < len(s); j++ {
 		switch o := s[j]; o {
 		case '\\':
 			j++

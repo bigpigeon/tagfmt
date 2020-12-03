@@ -11,6 +11,7 @@ import (
 	"go/ast"
 	"go/token"
 	"strings"
+	"unicode/utf8"
 )
 
 type tagFormatter struct {
@@ -136,7 +137,8 @@ func fieldsTagFormat(fields []*ast.Field) error {
 			if i >= len(longestList) {
 				longestList = append(longestList, 0)
 			}
-			longestList[i] = max(len(kv.String()), longestList[i])
+			kvLen := utf8.RuneCountInString(kv.String())
+			longestList[i] = max(kvLen, longestList[i])
 		}
 	}
 
@@ -147,7 +149,8 @@ func fieldsTagFormat(fields []*ast.Field) error {
 		}
 		var keyValueRaw []string
 		for i, kv := range keyWords {
-			keyValueRaw = append(keyValueRaw, kv.String()+strings.Repeat(" ", longestList[i]-len(kv.String())))
+			kvLen := utf8.RuneCountInString(kv.String())
+			keyValueRaw = append(keyValueRaw, kv.String()+strings.Repeat(" ", longestList[i]-kvLen))
 		}
 
 		field.Tag.Value = quote + strings.TrimRight(strings.Join(keyValueRaw, " "), " ") + quote

@@ -1,0 +1,11 @@
+//tagfmt -f "json=or(:tag,'')"
+
+package main
+
+type OrderDetail struct {
+    ID       string   `json:"Id"`
+    UserName string   `json:"User"`
+    OrderID  string   ``
+    Callback string   ``
+    Address  []string ``
+}
