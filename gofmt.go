@@ -67,11 +67,6 @@ const (
 	printerMode = printer.UseSpaces | printer.TabIndent
 )
 
-type XXX struct {
-	中文にほんご               string
-	your_keyboard_layout int
-}
-
 var (
 	fileSet    = token.NewFileSet() // per process FileSet
 	exitCode   = 0
