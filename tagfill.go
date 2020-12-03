@@ -351,7 +351,7 @@ func splitWithoutQuote(s string, key byte) ([]string, error) {
 	for i := 0; i < len(s); i++ {
 		c := s[i]
 		if s[i] == '"' || s[i] == '\'' {
-			nextQuote := findNextQuote(s, i, c)
+			nextQuote := findNextQuote(s, i+1, c)
 			if nextQuote == -1 {
 				return nil, ErrUnclosedQuote
 			}
