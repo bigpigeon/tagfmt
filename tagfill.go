@@ -357,8 +357,9 @@ func splitWithoutQuote(s string, key byte) ([]string, error) {
 			}
 			i = nextQuote
 		} else if s[i] == key {
+			sub = append(sub, s[pre:i])
 			pre = i + 1
-			sub = append(sub, s[:i])
+
 		}
 	}
 	if pre != len(s) {

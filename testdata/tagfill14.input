@@ -1,0 +1,8 @@
+//tagfmt -f "json=or(:tag,lower_camel(:field))|pflag=or(:tag,snake(:field))|bson=or(:tag,lower_camel(:field))"
+
+package main
+
+type OrderDetail struct {
+    ID       string   `json:"Id"`
+    UserName string   `json:"User"`
+}
