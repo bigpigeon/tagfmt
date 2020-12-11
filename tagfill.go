@@ -473,7 +473,7 @@ func newTagFill(f *ast.File, fs *token.FileSet, rule string) (*tagFiller, error)
 
 func snakeConvert(name string) string {
 	if len(name) == 0 {
-		panic("error length name string")
+		return ""
 	}
 	var convert []byte
 
@@ -506,7 +506,7 @@ func snakeConvert(name string) string {
 
 func upperCamelConvert(name string) string {
 	if len(name) == 0 {
-		panic("error length name string")
+		return ""
 	}
 	toUpperCamel := false
 	var newName []byte
@@ -534,7 +534,7 @@ func upperCamelConvert(name string) string {
 
 func lowerCamelConvert(name string) string {
 	if len(name) == 0 {
-		panic("error length name string")
+		return ""
 	}
 
 	toUpperCamel := false

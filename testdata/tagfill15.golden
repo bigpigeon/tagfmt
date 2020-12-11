@@ -1,0 +1,8 @@
+//tagfmt -f "json=snake('')|yaml=upper_camel('')|bson=lower_camel('')"
+
+package main
+
+type OrderDetail struct {
+	ID       string `json:"" bson:"" yaml:""`
+	UserName string `json:"" bson:"" yaml:""`
+}
