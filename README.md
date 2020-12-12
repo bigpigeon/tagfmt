@@ -14,6 +14,8 @@ tagfmt feature:
 - fill specified tag key to field
 - sort field tags
 
+
+
 ## get tagfmt 
 
 you can download from github releases
@@ -52,6 +54,11 @@ Debugging support:
 	-cpuprofile filename
 		Write cpu profile to the specified file.
 ```
+
+## use in vscode
+
+<img src="https://media.giphy.com/media/kFLms5eyMuA8qB8493/giphy.gif" width="40" height="40" />
+
 
 ## tag align 
 
