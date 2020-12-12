@@ -57,7 +57,21 @@ Debugging support:
 
 ## use in vscode
 
-![](https://media.giphy.com/media/kFLms5eyMuA8qB8493/giphy.gif)
+1. install filewatcher extension first
+2. edit filewatcher settings
+3. add sub item to `filewatcher.commands`, and then save it
+4. open the go file, add struct field and then save it
+
+```
+{
+   "match": "\\.go",
+   "isAsync": true,
+   "event": "onFileChange",
+   "cmd": "tagfmt -w -f \"json=or(:tag,snake(:field))|yaml=or(:tag,lower_camel(:field))\" ${file} -s -so \"json|yaml\" ${file} " 
+}
+``` 
+
+![use in vscode](resources/use-in-vscode.gif)
 
 
 ## tag align 
