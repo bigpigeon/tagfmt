@@ -57,7 +57,7 @@ Debugging support:
 
 ## use in vscode
 
-<img src="https://media.giphy.com/media/kFLms5eyMuA8qB8493/giphy.gif" width="40" height="40" />
+![](https://media.giphy.com/media/kFLms5eyMuA8qB8493/giphy.gif)
 
 
 ## tag align 
