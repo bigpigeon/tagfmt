@@ -1,0 +1,18 @@
+//tagfmt -f "json=snake(:tag)|yaml=lower_camel(:tag)|bson=lower_camel(:tag)|toml=upper_camel(:tag)"
+
+package main
+func main() {
+	// tagfill: toml yaml
+    type OrderConfig struct {
+    	Name     string ``
+        UserName string ``
+        Pay      int    ``
+    }
+    // tagfill: json bson
+    type OrderDetail struct {
+        ID       string ``
+        UserName string ``
+        Pay      int    ``
+    }
+}
+

@@ -16,8 +16,9 @@ import (
 )
 
 type tagFillerFields struct {
-	fields []*ast.Field
-	keySet map[string]struct{}
+	fields    []*ast.Field
+	keySet    map[string]struct{}
+	tagFilter map[string]bool
 }
 
 type ruleFuncArgs struct {
@@ -57,21 +58,56 @@ func (s *tagFiller) Scan() error {
 
 func (s *tagFiller) Execute() error {
 	for _, needFill := range s.needFillList {
-		fieldsTagFill(needFill.fields, needFill.keySet, s.ruleSet)
+		if needFill.tagFilter == nil {
+			fieldsTagFill(needFill.fields, needFill.keySet, s.ruleSet)
+		} else {
+			ruleSet := map[string]tagFieldRule{}
+			for key, rule := range s.ruleSet {
+				if needFill.tagFilter[key] {
+					ruleSet[key] = rule
+				}
+			}
+			fieldsTagFill(needFill.fields, needFill.keySet, ruleSet)
+		}
 	}
 	return nil
 }
 
 func (s *tagFiller) Visit(node ast.Node) ast.Visitor {
-	visit := toyVisit{executor: s.executor}
+	cmap := ast.NewCommentMap(s.fs, node, s.f.Comments)
+	visit := newTopVisit(cmap, s.executor)
 	return visit.Visit(node)
 }
 
-func (s *tagFiller) executor(name string, n *ast.StructType) {
+func (s *tagFiller) findCommentTags(comments []*ast.CommentGroup) map[string]bool {
+	var tags map[string]bool
+	for _, group := range comments {
+		for _, cmd := range group.List {
+			if strings.HasPrefix(cmd.Text, "//") {
+
+				text := strings.TrimSpace(cmd.Text[len("//"):])
+				if strings.HasPrefix(text, "tagfill:") {
+					if tags == nil {
+						tags = map[string]bool{}
+					}
+					for _, tag := range strings.Split(text[len("tagfill:"):], " ") {
+						if tag != "" {
+							tags[tag] = true
+						}
+					}
+				}
+			}
+		}
+	}
+	return tags
+}
+
+func (s *tagFiller) executor(name string, comments []*ast.CommentGroup, n *ast.StructType) {
 	if n.Fields != nil {
 		keySet := map[string]struct{}{}
 		var cacheFieldList []*ast.Field
 		var preFieldLine int
+		tagsFilter := s.findCommentTags(comments)
 		for _, field := range n.Fields.List {
 			fieldName := getFieldOrTypeName(field)
 			if fieldFilter(fieldName) == false {
@@ -80,7 +116,7 @@ func (s *tagFiller) executor(name string, n *ast.StructType) {
 			line := s.fs.Position(field.Pos()).Line
 			// If there are blank lines or nil field tag in the structure, reset
 			if field.Tag == nil || preFieldLine+1 < line {
-				s.needFillList = append(s.needFillList, tagFillerFields{cacheFieldList, keySet})
+				s.needFillList = append(s.needFillList, tagFillerFields{cacheFieldList, keySet, tagsFilter})
 				keySet = map[string]struct{}{}
 				cacheFieldList = nil
 			}
@@ -98,7 +134,7 @@ func (s *tagFiller) executor(name string, n *ast.StructType) {
 			}
 		}
 		if cacheFieldList != nil {
-			s.needFillList = append(s.needFillList, tagFillerFields{cacheFieldList, keySet})
+			s.needFillList = append(s.needFillList, tagFillerFields{cacheFieldList, keySet, tagsFilter})
 		}
 	}
 }

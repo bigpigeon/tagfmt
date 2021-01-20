@@ -25,6 +25,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 	"strings"
 )
 
@@ -35,6 +36,7 @@ var (
 	write                = flag.Bool("w", false, "write result to (source) file instead of stdout")
 	tagSort              = flag.Bool("s", false, "sort struct tag by key")
 	tagSortOrder         = flag.String("so", "", "sort struct tag keys order e.g json|yaml|desc")
+	tagSortWeight        = flag.String("sw", "", "sort struct tag keys weight e.g json=1|yaml=2|desc=-1 the higher weight, the higher the ranking, default keys weight is 0")
 	doDiff               = flag.Bool("d", false, "display diffs instead of rewriting files")
 	allErrors            = flag.Bool("e", false, "report all errors (not just the first 10 on different lines)")
 	fill                 = flag.String("f", "", "fill key and value for field e.g json=lower(_val)|yaml=snake(_val)")
@@ -42,6 +44,7 @@ var (
 	inversePattern       = flag.String("P", "", "field name with inverse regular expression pattern")
 	structPattern        = flag.String("sp", ".*", "struct name with regular expression pattern")
 	inverseStructPattern = flag.String("sP", "", "struct name with inverse regular expression pattern")
+
 	// debugging
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to this file")
 )
@@ -174,7 +177,25 @@ func processFile(filename string, in io.Reader, out io.Writer, stdin bool) error
 	}
 
 	if *tagSort {
-		executor = append(executor, newTagSort(file, strings.Split(*tagSortOrder, "|")))
+
+		weights := map[string]int{}
+		for _, weightStr := range strings.Split(*tagSortWeight, "|") {
+			weightStr = strings.TrimSpace(weightStr)
+			if strings.TrimSpace(weightStr) == "" {
+				continue
+			}
+			keyVals := strings.Split(weightStr, "=")
+			if len(keyVals) != 2 {
+				return errors.New("tagSortWeight format error please check 'sw' arg")
+			}
+			key := strings.TrimSpace(keyVals[0])
+			val, err := strconv.Atoi(strings.TrimSpace(keyVals[1]))
+			if err != nil {
+				return errors.New("tagSortWeight format error please check 'sw' arg: " + err.Error())
+			}
+			weights[key] = val
+		}
+		executor = append(executor, newTagSort(file, fileSet, strings.Split(*tagSortOrder, "|"), weights))
 	}
 	if *align {
 		executor = append(executor, newTagFmt(file, fileSet))

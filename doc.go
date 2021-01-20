@@ -74,6 +74,21 @@ When invoke with -so <order> and -s will sort struct tags by your custom <order>
 		Data string `json:"data" yaml:"data" desc:"some inuse data"`
 	}
 
+When invoke with -sw <weight> and -s will sort struct tags by your custom <weight>
+
+	//tagfmt -s -sw "json=2|yaml=1|toml=1|desc=-1"
+	package main
+	type Example struct {
+		Data string `desc:"some inuse data" yaml:"data" toml:"data" binding:"required" json:"data" `
+	}
+
+	package main
+
+	type Example struct {
+		Data string `json:"data" toml:"data" yaml:"data" binding:"required" desc:"some inuse data"`
+	}
+
+
 When invoke with -f "*" tagfmt will fill missing key and empty value in group(group split by black line or field without tag)
 
 	struct tag fill example:
@@ -110,6 +125,46 @@ You also can only fill "json" tag key and field name as its value
 		Tag string  `json:"Tag"`
 		Fee float32 `json:"Fee"`
 	}
+
+
+use `// tagfill: [key1 key2]` to filter below struct requires key
+
+	struct tag fill example:
+	//tagfmt -f "json=snake(:tag)|yaml=lower_camel(:tag)|bson=lower_camel(:tag)|toml=upper_camel(:tag)"
+
+	package main
+	// tagfill: toml yaml
+	type OrderConfig struct {
+		Name     string ``
+		UserName string ``
+		Pay      int    ``
+	}
+	// tagfill: json bson
+	type OrderDetail struct {
+		ID       string ``
+		UserName string ``
+		Pay      int    ``
+	}
+
+
+	//after format
+
+	package main
+
+	// tagfill: toml yaml
+	type OrderConfig struct {
+		Name     string `toml:"" yaml:""`
+		UserName string `toml:"" yaml:""`
+		Pay      int    `toml:"" yaml:""`
+	}
+
+	// tagfill: json bson
+	type OrderDetail struct {
+		ID       string `bson:"" json:""`
+		UserName string `bson:"" json:""`
+		Pay      int    `bson:"" json:""`
+	}
+
 
 	fill rule are rich and flexible here is example about fill json key and snake converted field name as its value, final keep it's origin extra tag
 	struct tag fill example:

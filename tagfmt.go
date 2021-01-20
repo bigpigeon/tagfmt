@@ -77,7 +77,7 @@ func (fields *tagFormatterFields) reset(f *tagFormatter) {
 	fields.anonymous = nil
 }
 
-func (s *tagFormatter) executor(name string, n *ast.StructType) {
+func (s *tagFormatter) executor(name string, comments []*ast.CommentGroup, n *ast.StructType) {
 	if n.Fields != nil {
 		var ffields tagFormatterFields
 
@@ -122,7 +122,8 @@ func (s *tagFormatter) executor(name string, n *ast.StructType) {
 }
 
 func (s *tagFormatter) Visit(node ast.Node) ast.Visitor {
-	visit := toyVisit{executor: s.executor}
+	cmap := ast.NewCommentMap(s.fs, node, s.f.Comments)
+	visit := newTopVisit(cmap, s.executor)
 	return visit.Visit(node)
 }
 

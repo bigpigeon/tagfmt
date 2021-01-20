@@ -48,11 +48,10 @@ usage: tagfmt [flags] [path ...]
         sort struct tag keys order e.g json|yaml|desc
   -sp string
         struct name with regular expression pattern (default ".*")
+  -sw string
+        sort struct tag keys weight e.g json=1|yaml=2|desc=-1 the higher weight, the higher the ranking, default keys weight is 0
   -w    write result to (source) file instead of stdout
 
-Debugging support:
-	-cpuprofile filename
-		Write cpu profile to the specified file.
 ```
 
 ## use in vscode
@@ -236,7 +235,49 @@ fill rule have many functions and placeholders to avoid writing tags manually
 |:tag_basic | replace with field existed tag's basic value (the value before the first ',' )
 |:tag_extra | replace with field existed tag's extra data (the value after the first ',' )
 
+## tag fill with comment filter
 
+use `// tagfill: [key1 key2]` to filter below struct requires key
+
+```go
+//tagfmt -f "json=snake(:tag)|yaml=lower_camel(:tag)|bson=lower_camel(:tag)|toml=upper_camel(:tag)"
+
+package main
+// tagfill: toml yaml
+type OrderConfig struct {
+	Name     string ``
+    UserName string ``
+    Pay      int    ``
+}
+// tagfill: json bson
+type OrderDetail struct {
+    ID       string ``
+    UserName string ``
+    Pay      int    ``
+}
+
+```
+after format
+```go
+//tagfmt -f "json=snake(:tag)|yaml=lower_camel(:tag)|bson=lower_camel(:tag)|toml=upper_camel(:tag)"
+
+package main
+
+// tagfill: toml yaml
+type OrderConfig struct {
+	Name     string `toml:"" yaml:""`
+	UserName string `toml:"" yaml:""`
+	Pay      int    `toml:"" yaml:""`
+}
+
+// tagfill: json bson
+type OrderDetail struct {
+	ID       string `bson:"" json:""`
+	UserName string `bson:"" json:""`
+	Pay      int    `bson:"" json:""`
+}
+
+```
 
 ## tag sort 
 
@@ -263,7 +304,6 @@ type Example struct {
 	Data string `desc:"some inuse data" yaml:"data" json:"data" `
 }
 // after format
-//tagfmt -s -so "json|yaml|desc"
 package main
 
 type Example struct {
@@ -271,6 +311,22 @@ type Example struct {
 }
 ```
 
+use sort weight to determine the sort order
+
+```
+//tagfmt -s -sw "json=2|yaml=1|toml=1|desc=-1"
+package main
+type Example struct {
+	Data string `desc:"some inuse data" yaml:"data" toml:"data" binding:"required" json:"data" `
+}
+// after format
+package main
+
+type Example struct {
+	Data string `json:"data" toml:"data" yaml:"data" binding:"required" desc:"some inuse data"`
+}
+
+```
 
 ### tag select
 

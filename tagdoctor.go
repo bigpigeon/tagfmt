@@ -31,11 +31,12 @@ type tagDoctor struct {
 }
 
 func (s *tagDoctor) Visit(node ast.Node) ast.Visitor {
-	visit := toyVisit{executor: s.executor}
+	cmap := ast.NewCommentMap(s.fs, node, s.f.Comments)
+	visit := newTopVisit(cmap, s.executor)
 	return visit.Visit(node)
 }
 
-func (t *tagDoctor) executor(name string, n *ast.StructType) {
+func (t *tagDoctor) executor(name string, comments []*ast.CommentGroup, n *ast.StructType) {
 	if n.Fields != nil {
 		for _, field := range n.Fields.List {
 			fieldName := getFieldOrTypeName(field)

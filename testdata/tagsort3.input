@@ -1,0 +1,5 @@
+//tagfmt -s -sw "json=2|yaml=1|toml=1|desc=-1"
+package main
+type Example struct {
+	Data string `desc:"some inuse data" yaml:"data" toml:"data" binding:"required" json:"data" `
+}

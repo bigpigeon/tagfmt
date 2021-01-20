@@ -163,6 +163,14 @@ func runTest(t *testing.T, in, out string) {
 					panic(err)
 				}
 			}
+		case "-sw":
+			nextVal = func(s string) {
+				var err error
+				*tagSortWeight, err = strconv.Unquote(s)
+				if err != nil {
+					panic(err)
+				}
+			}
 		default:
 			t.Errorf("unrecognized flag name: %s", flag)
 		}
