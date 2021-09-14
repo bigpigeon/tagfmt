@@ -36,6 +36,20 @@ func TestSnakeConvert(t *testing.T) {
 	assert.Equal(t, snakeConvert("toyorm.User.field"), "toyorm.user.field")
 }
 
+func TestNewSnakeConvert(t *testing.T) {
+	assert.Equal(t, newSnakeConvert("ID"), "id")
+	assert.Equal(t, newSnakeConvert("UserDetail"), "user_detail")
+	assert.Equal(t, newSnakeConvert("OneToOne"), "one_to_one")
+	assert.Equal(t, newSnakeConvert("_UserDetail"), "_user_detail")
+	assert.Equal(t, newSnakeConvert("userDetail"), "user_detail")
+	assert.Equal(t, newSnakeConvert("UserDetailID"), "user_detail_id")
+	assert.Equal(t, newSnakeConvert("NameHTTPTest"), "name_http_test")
+	assert.Equal(t, newSnakeConvert("IDAndValue"), "id_and_value")
+	assert.Equal(t, newSnakeConvert("toyorm.User.field"), "toyorm.user.field")
+	assert.Equal(t, newSnakeConvert("USER"), "user")
+	assert.Equal(t, newSnakeConvert("User98Test"), "user98test")
+}
+
 func TestParseFieldRule(t *testing.T) {
 	testFieldArgs := func(name string, oldTag string) *ruleFuncArgs {
 		return newRuleArgs(&ast.Field{

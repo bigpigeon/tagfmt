@@ -302,7 +302,7 @@ func parseFieldRuleSingle(r string) (tagFieldRule, error) {
 				return nil, err
 			}
 			return func(args *ruleFuncArgs) (newTagName string) {
-				return snakeConvert(subRuleList[0](args))
+				return newSnakeConvert(subRuleList[0](args))
 			}, nil
 		case "upper_camel":
 			subRuleList, err := parseFieldMultiRule(argsStr, 1)
@@ -537,6 +537,62 @@ func snakeConvert(name string) string {
 			convert = append(convert, a)
 		}
 	}
+	return string(convert)
+}
+
+func toLowRune(w rune) rune {
+	if w >= 'A' && w <= 'Z' {
+		return w - 'A' + 'a'
+	}
+	return w
+}
+
+func newSnakeConvert(name string) string {
+	if len(name) <= 1 {
+		return strings.ToLower(name)
+	}
+	var convert []rune
+	pre := rune(name[0])
+	continuesUpper := false
+	firstWord := true
+	for _, r := range name[1:] {
+		if r >= 'A' && r <= 'Z' {
+			if pre >= 'A' && pre <= 'Z' && continuesUpper == false {
+				if firstWord == false {
+					convert = append(convert, '_')
+				}
+				convert = append(convert, toLowRune(pre))
+				continuesUpper = true
+				firstWord = false
+			} else {
+				if pre >= 'a' && pre <= 'z' {
+					firstWord = false
+				}
+				convert = append(convert, toLowRune(pre))
+			}
+		} else {
+			continuesUpper = false
+			if r >= 'a' && r <= 'z' {
+				if pre >= 'a' && pre <= 'z' {
+					convert = append(convert, pre)
+				} else if pre >= 'A' && pre <= 'Z' {
+					if firstWord == false {
+						convert = append(convert, '_')
+					}
+					convert = append(convert, toLowRune(pre))
+					firstWord = false
+				} else {
+					convert = append(convert, toLowRune(pre))
+				}
+			} else {
+				firstWord = true
+				convert = append(convert, toLowRune(pre))
+			}
+		}
+		pre = r
+	}
+	convert = append(convert, toLowRune(pre))
+
 	return string(convert)
 }
 
